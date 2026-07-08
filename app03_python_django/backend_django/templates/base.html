@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="pl" x-data="{ dark: localStorage.getItem('tc_dark') === 'true', locale: localStorage.getItem('tc_locale') || 'pl' }"
+      x-init="$watch('dark', v => localStorage.setItem('tc_dark', v)); $watch('locale', v => localStorage.setItem('tc_locale', v))"
+      :class="{ 'dark': dark }">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}ThreatCompass 2026{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <script src="{% static 'js/alpine.min.js' %}" defer></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+  <nav class="bg-indigo-900 text-white">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
+      <a href="{% url 'home' %}" class="font-semibold text-lg">ThreatCompass 2026</a>
+      <span class="flex-1"></span>
+      <!-- Dark-mode stub: toggles a class + persists to localStorage. -->
+      <button @click="dark = !dark" class="px-2 py-1 rounded hover:bg-indigo-800" aria-label="Toggle dark mode">
+        <span x-text="dark ? '☀️' : '🌙'"></span>
+      </button>
+      <!-- Language switch stub: persists tc_locale to localStorage per PLAN.md
+           section 5 Phase 1 checklist ("language switch stub"). Real
+           {% templatetag openblock %} trans {% templatetag closeblock %} / .po
+           wiring is Phase 5 (requirements.md FR-17) - this does not translate
+           anything yet, same deferral the sibling apps made for their own
+           i18n toggles. -->
+      <div class="flex rounded overflow-hidden border border-indigo-700 text-sm">
+        <button @click="locale = 'pl'" :class="locale === 'pl' ? 'bg-white text-indigo-900' : 'hover:bg-indigo-800'" class="px-2 py-1">PL</button>
+        <button @click="locale = 'en'" :class="locale === 'en' ? 'bg-white text-indigo-900' : 'hover:bg-indigo-800'" class="px-2 py-1">EN</button>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

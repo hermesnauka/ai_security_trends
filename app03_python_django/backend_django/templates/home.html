@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}ThreatCompass 2026{% endblock %}
+
+{% block content %}
+  <h1 class="text-3xl font-bold">ThreatCompass 2026</h1>
+  <p class="mt-2 max-w-2xl text-slate-600 dark:text-slate-400">
+    Interaktywna baza zagrożeń, mitigacji i przykładów kodu w OWASP, MITRE ATLAS i CompTIA SecAI+.
+    Napisana w 100% w Pythonie/Django — bez odrębnego backendu czy SPA.
+  </p>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+    <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+      <div class="text-sm text-slate-500 dark:text-slate-400">Frameworki bezpieczeństwa</div>
+      <div class="text-3xl font-bold mt-1">{{ framework_count }}</div>
+    </div>
+    <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+      <div class="text-sm text-slate-500 dark:text-slate-400">Zagrożenia w katalogu</div>
+      <div class="text-3xl font-bold mt-1">{{ threat_count }}</div>
+    </div>
+  </div>
+
+  <form method="get" class="mt-6 flex gap-2 max-w-md">
+    <input type="text" name="q" value="{{ query }}" placeholder="Szybkie wyszukiwanie, np. LLM..."
+           class="flex-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 focus:outline-none focus:border-indigo-500">
+    <button type="submit" class="rounded-md bg-indigo-900 text-white px-4 py-2 font-medium hover:bg-indigo-800">Szukaj</button>
+  </form>
+
+  <h2 class="text-lg font-semibold mt-8 mb-3">Frameworki</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for framework in frameworks %}
+      <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-500">{{ framework.code }}</div>
+        <div class="font-medium">{{ framework.name }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">{{ framework.version }}</div>
+      </div>
+    {% empty %}
+      <p class="text-slate-500">Brak frameworków spełniających wyszukiwanie.</p>
+    {% endfor %}
+  </div>
+
+  <p class="mt-10 text-xs text-slate-400 dark:text-slate-600">
+    Treść edukacyjna. Próbki kodu ATTACK_DEMO są zawsze wyraźnie oznaczone i nigdy nie są wykonywane przez tę aplikację.
+  </p>
+{% endblock %}
