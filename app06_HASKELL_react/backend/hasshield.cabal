@@ -1,0 +1,96 @@
+cabal-version:      2.4
+name:               hasshield
+version:            0.1.0.0
+synopsis:           HaskShield 2026 -- Phase 1 Haskell/servant backend (API parity with app01_react)
+build-type:         Simple
+
+common warnings
+  ghc-options: -Wall -Wincomplete-patterns
+
+library
+  import:           warnings
+  hs-source-dirs:   src
+  exposed-modules:
+      Domain.Types
+      Config
+      Migrate
+      Store.Pool
+      Store.FrameworkStore
+      Store.ThreatStore
+      Service.FrameworkService
+      Service.ThreatService
+      Service.AuthService
+      Auth.Jwt
+      Api
+      Api.Error
+      Api.Handler.Framework
+      Api.Handler.Threat
+      Api.Handler.Auth
+  build-depends:
+      base >=4.18 && <5
+    , aeson
+    , base64-bytestring
+    , bytestring
+    , contravariant
+    , crypton
+    , directory
+    , filepath
+    , hasql
+    , hasql-pool
+    , http-types
+    , password
+    , ram
+    , servant-server
+    , text
+    , time
+    , uuid
+    , wai
+    , warp
+  default-language: Haskell2010
+  default-extensions:
+      OverloadedStrings
+      DataKinds
+      TypeOperators
+      LambdaCase
+      DeriveGeneric
+
+executable api
+  import:           warnings
+  hs-source-dirs:   app
+  main-is:          Main.hs
+  build-depends:
+      base
+    , hasshield
+    , directory
+    , filepath
+    , hasql
+    , servant-server
+    , warp
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings
+
+test-suite hasshield-test
+  import:           warnings
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  other-modules:
+      ServiceSpec
+      ApiSpec
+  build-depends:
+      base
+    , hasshield
+    , aeson
+    , bytestring
+    , directory
+    , filepath
+    , hasql
+    , hspec
+    , hspec-wai
+    , http-types
+    , QuickCheck
+    , servant-server
+    , text
+    , wai
+  default-language: Haskell2010
+  default-extensions: OverloadedStrings
