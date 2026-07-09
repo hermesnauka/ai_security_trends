@@ -1,0 +1,14 @@
+[requires]
+drogon/1.9.6
+jwt-cpp/0.7.0
+spdlog/1.13.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[options]
+drogon/*:with_brotli=False
+drogon/*:with_redis=False
+drogon/*:with_sqlite=False
+drogon/*:with_mysql=False

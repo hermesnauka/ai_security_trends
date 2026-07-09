@@ -40,17 +40,20 @@ echo "== scalashield role/database =="
 echo "ready"
 
 echo "== Backend (ZIO HTTP, :8080) =="
-if curl -sf http://localhost:8080/api/v1/health >/dev/null 2>&1; then
+if curl -sf http://localhost:8080/health >/dev/null 2>&1; then
     echo "already running"
 else
     (
         cd "$ROOT_DIR/backend"
-        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME="${POSTGRES_DB}" DB_USER="${POSTGRES_USER}" DB_PASSWORD="${POSTGRES_PASSWORD}" HTTP_PORT=8080
+        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME="${POSTGRES_DB}" DB_USER="${POSTGRES_USER}" DB_PASSWORD="${POSTGRES_PASSWORD}" HTTP_PORT=8080 \
+               JWT_SECRET="${JWT_SECRET:-dev-only-secret-CHANGE-IN-PRODUCTION-min32}" \
+               ADMIN_USERNAME="${ADMIN_USERNAME:-admin}" \
+               ADMIN_PASSWORD_HASH="${ADMIN_PASSWORD_HASH:-}"
         nohup sbt run > "$RUN_DIR/backend.log" 2>&1 &
         echo $! > "$RUN_DIR/backend.pid"
     )
     echo "starting (PID $(cat "$RUN_DIR/backend.pid")), waiting for :8080 (first run compiles + resolves deps, can take a couple minutes) ..."
-    if timeout 180 bash -c 'until curl -sf http://localhost:8080/api/v1/health >/dev/null 2>&1; do sleep 3; done'; then
+    if timeout 180 bash -c 'until curl -sf http://localhost:8080/health >/dev/null 2>&1; do sleep 3; done'; then
         echo "up"
     else
         echo "TIMED OUT - tail of $RUN_DIR/backend.log:"
@@ -81,6 +84,6 @@ fi
 echo
 echo "Frontend:    http://localhost:5173"
 echo "Backend API: http://localhost:8080/api/v1/frameworks"
-echo "Health:      http://localhost:8080/api/v1/health"
+echo "Health:      http://localhost:8080/health"
 echo "Logs:        $RUN_DIR/{postgres,backend,frontend}.log"
 echo "Stop with:   scripts/local-dev-down.sh"
