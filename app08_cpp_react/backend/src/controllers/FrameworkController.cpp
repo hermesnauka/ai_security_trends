@@ -4,6 +4,7 @@
 #include <json/json.h>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include <type_traits>
 
 #include "models/Models.h"
 #include "utils/Headers.h"
@@ -19,7 +20,9 @@ void FrameworkController::getAll(
 {
     // Shared so both success and error lambdas can call it — moving into
     // two separate lambda captures (double-move) is UB.
-    auto cb = std::make_shared<decltype(callback)>(std::move(callback));
+    // decltype(callback) would be T&& (callback's declared type, reference
+    // included) - make_shared needs the plain value type, hence decay_t.
+    auto cb = std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
     auto db = drogon::app().getDbClient();
 
     db->execSqlAsync(
@@ -64,7 +67,9 @@ void FrameworkController::getByCode(
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     std::string code)
 {
-    auto cb = std::make_shared<decltype(callback)>(std::move(callback));
+    // decltype(callback) would be T&& (callback's declared type, reference
+    // included) - make_shared needs the plain value type, hence decay_t.
+    auto cb = std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
     auto db = drogon::app().getDbClient();
 
     db->execSqlAsync(

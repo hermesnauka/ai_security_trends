@@ -155,7 +155,7 @@ Json::Value makePage(const std::vector<T>& items, long long totalElements, int p
 
     Json::Value result;
     result["content"]       = content;
-    result["totalElements"] = totalElements;
+    result["totalElements"] = static_cast<Json::Int64>(totalElements);
     result["totalPages"]    = totalPages;
     result["number"]        = page;
     result["size"]          = size;

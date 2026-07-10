@@ -11,6 +11,7 @@
 #include <functional>
 #include <unordered_map>
 #include <cctype>
+#include <type_traits>
 
 #include "models/Models.h"
 #include "utils/Headers.h"
@@ -147,7 +148,9 @@ void ThreatController::listThreats(
         " LIMIT " + limitParam + " OFFSET " + offsetParam;
 
     // Shared to avoid double-move UB when both success and error lambdas need callback.
-    auto cb = std::make_shared<decltype(callback)>(std::move(callback));
+    // decltype(callback) would be T&& (callback's declared type, reference
+    // included) - make_shared needs the plain value type, hence decay_t.
+    auto cb = std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
     auto db = drogon::app().getDbClient();
 
     auto handleError = [cb](const drogon::orm::DrogonDbException& e) {
@@ -195,7 +198,9 @@ void ThreatController::getThreat(
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     std::string id)
 {
-    auto cb = std::make_shared<decltype(callback)>(std::move(callback));
+    // decltype(callback) would be T&& (callback's declared type, reference
+    // included) - make_shared needs the plain value type, hence decay_t.
+    auto cb = std::make_shared<std::decay_t<decltype(callback)>>(std::move(callback));
     auto db = drogon::app().getDbClient();
 
     db->execSqlAsync(

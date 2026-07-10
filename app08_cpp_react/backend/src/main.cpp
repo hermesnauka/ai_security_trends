@@ -45,6 +45,31 @@ int main() {
     );
 
     // -----------------------------------------------------------------------
+    // OPTIONS preflight (CORS): short-circuit before routing, for every path.
+    // A per-path app().registerHandler(path, ..., {Options}) was tried here
+    // instead, using the exact same path strings as each controller's
+    // METHOD_ADD - Drogon does not merge the two registrations' methods for
+    // an identical path, so it silently made GET/POST return 405 on every
+    // real endpoint (confirmed by actually running the binary; not visible
+    // from reading the code). registerPreRoutingAdvice runs before routing
+    // ever sees the request, so it can't collide with a controller's routes.
+    // -----------------------------------------------------------------------
+    app().registerPreRoutingAdvice(
+        [](const HttpRequestPtr& req,
+           AdviceCallback&& acb,
+           AdviceChainCallback&& accb)
+        {
+            if (req->method() == Options) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k204NoContent);
+                acb(resp);
+                return;
+            }
+            accb();
+        }
+    );
+
+    // -----------------------------------------------------------------------
     // Health endpoint
     // -----------------------------------------------------------------------
     app().registerHandler(
@@ -58,33 +83,6 @@ int main() {
         },
         {Get}
     );
-
-    // -----------------------------------------------------------------------
-    // OPTIONS preflight handlers (CORS)
-    // Paths with {1} capture a path segment — the handler must accept it.
-    // -----------------------------------------------------------------------
-    auto options0 = [](const HttpRequestPtr&,
-                        std::function<void(const HttpResponsePtr&)>&& cb)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setStatusCode(k204NoContent);
-        cb(resp);
-    };
-
-    auto options1 = [](const HttpRequestPtr&,
-                        std::function<void(const HttpResponsePtr&)>&& cb,
-                        std::string /*pathParam*/)
-    {
-        auto resp = HttpResponse::newHttpResponse();
-        resp->setStatusCode(k204NoContent);
-        cb(resp);
-    };
-
-    app().registerHandler("/api/v1/auth/login",       options0, {Options});
-    app().registerHandler("/api/v1/frameworks",        options0, {Options});
-    app().registerHandler("/api/v1/threats",           options0, {Options});
-    app().registerHandler("/api/v1/frameworks/{1}",    options1, {Options});
-    app().registerHandler("/api/v1/threats/{1}",       options1, {Options});
 
     // -----------------------------------------------------------------------
     // Server startup

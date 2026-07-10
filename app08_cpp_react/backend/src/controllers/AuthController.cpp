@@ -3,7 +3,9 @@
 #include <crypt.h>
 #include <cstring>
 
-#include <jwt-cpp/jwt.h>
+// jwt-cpp 0.6+ needs an explicit JSON-traits type; boost-json is used since
+// Boost is already pulled in transitively by Drogon (see CMakeLists.txt).
+#include <jwt-cpp/traits/boost-json/traits.h>
 #include <json/json.h>
 #include <spdlog/spdlog.h>
 
@@ -73,12 +75,12 @@ void AuthController::login(
 
     std::string token;
     try {
-        token = jwt::create()
+        token = jwt::create<jwt::traits::boost_json>()
             .set_type("JWT")
             .set_subject(username)
             .set_issued_at(now)
             .set_expires_at(expiry)
-            .set_payload_claim("role", jwt::claim(std::string("ADMIN")))
+            .set_payload_claim("role", jwt::basic_claim<jwt::traits::boost_json>(std::string("ADMIN")))
             .sign(jwt::algorithm::hs256{cfg.jwtSecret});
     } catch (const std::exception& ex) {
         spdlog::error("JWT signing failed: {}", ex.what());
