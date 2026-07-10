@@ -12,3 +12,4 @@ drogon/*:with_brotli=False
 drogon/*:with_redis=False
 drogon/*:with_sqlite=False
 drogon/*:with_mysql=False
+drogon/*:with_postgres=True

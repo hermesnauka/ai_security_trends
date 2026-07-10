@@ -47,10 +47,8 @@ void FrameworkController::getAll(
 
         [cb](const drogon::orm::DrogonDbException& e) {
             spdlog::error("FrameworkController::getAll DB error: {}", e.base().what());
-            Json::Value err;
-            err["status"]  = 500;
-            err["message"] = "Internal server error";
-            auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(
+                makeError(500, "Internal Server Error", "Internal server error"));
             resp->setStatusCode(drogon::k500InternalServerError);
             addSecurityHeaders(resp);
             (*cb)(resp);
@@ -75,10 +73,8 @@ void FrameworkController::getByCode(
 
         [cb, code](const drogon::orm::Result& result) {
             if (result.empty()) {
-                Json::Value err;
-                err["status"]  = 404;
-                err["message"] = "Framework not found: " + code;
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(
+                    makeError(404, "Not Found", "Framework not found: " + code));
                 resp->setStatusCode(drogon::k404NotFound);
                 addSecurityHeaders(resp);
                 (*cb)(resp);
@@ -101,10 +97,8 @@ void FrameworkController::getByCode(
 
         [cb](const drogon::orm::DrogonDbException& e) {
             spdlog::error("FrameworkController::getByCode DB error: {}", e.base().what());
-            Json::Value err;
-            err["status"]  = 500;
-            err["message"] = "Internal server error";
-            auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(
+                makeError(500, "Internal Server Error", "Internal server error"));
             resp->setStatusCode(drogon::k500InternalServerError);
             addSecurityHeaders(resp);
             (*cb)(resp);

@@ -11,6 +11,7 @@
 #include <string>
 
 #include "config/Config.h"
+#include "models/Models.h"
 #include "utils/Headers.h"
 
 namespace cppcitadel {
@@ -25,10 +26,8 @@ void AuthController::login(
     // Parse JSON body
     auto jsonBody = req->getJsonObject();
     if (!jsonBody) {
-        Json::Value err;
-        err["status"]  = 400;
-        err["message"] = "Request body must be JSON";
-        auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
+            makeError(400, "Bad Request", "Request body must be JSON"));
         resp->setStatusCode(drogon::k400BadRequest);
         addSecurityHeaders(resp);
         callback(resp);
@@ -60,10 +59,8 @@ void AuthController::login(
 
     if (!usernameOk || !passwordOk) {
         spdlog::warn("Failed login attempt for username: '{}'", username);
-        Json::Value err;
-        err["status"]  = 401;
-        err["message"] = "Invalid credentials";
-        auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
+            makeError(401, "Unauthorized", "Invalid credentials"));
         resp->setStatusCode(drogon::k401Unauthorized);
         addSecurityHeaders(resp);
         callback(resp);
@@ -85,10 +82,8 @@ void AuthController::login(
             .sign(jwt::algorithm::hs256{cfg.jwtSecret});
     } catch (const std::exception& ex) {
         spdlog::error("JWT signing failed: {}", ex.what());
-        Json::Value err;
-        err["status"]  = 500;
-        err["message"] = "Token generation failed";
-        auto resp = drogon::HttpResponse::newHttpJsonResponse(err);
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(
+            makeError(500, "Internal Server Error", "Token generation failed"));
         resp->setStatusCode(drogon::k500InternalServerError);
         addSecurityHeaders(resp);
         callback(resp);

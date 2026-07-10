@@ -4,12 +4,34 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <chrono>
+#include <format>
 
 namespace cppcitadel {
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// UTC, millisecond precision - matches Java's Instant.now().toString(),
+// which is the shape app01 (the contract of record) actually emits.
+inline std::string nowIso8601() {
+    using namespace std::chrono;
+    auto ms = time_point_cast<milliseconds>(system_clock::now());
+    return std::format("{:%FT%T}Z", ms);
+}
+
+// Canonical error body: {timestamp, status, error, message} - see
+// app01's ApiExceptionHandler.java. `error` is the HTTP reason phrase
+// (e.g. "Not Found"), not a machine-readable error code.
+inline Json::Value makeError(int status, const std::string& error, const std::string& message) {
+    Json::Value v;
+    v["timestamp"] = nowIso8601();
+    v["status"]    = status;
+    v["error"]     = error;
+    v["message"]   = message;
+    return v;
+}
 
 inline std::vector<std::string> splitComma(const std::string& s) {
     std::vector<std::string> result;
@@ -118,21 +140,17 @@ struct ThreatDetail : ThreatSummary {
 // Page envelope  (Spring Data shape)
 // ---------------------------------------------------------------------------
 
+// `items` must already be exactly one page's worth of rows (SQL-side
+// LIMIT/OFFSET) - `totalElements` is the count of the full filtered set,
+// from a separate COUNT query, not items.size().
 template<typename T>
-Json::Value makePage(const std::vector<T>& items, int page, int size) {
-    // items is already the full result set; we paginate in-memory
-    int totalElements = static_cast<int>(items.size());
-    int totalPages    = (size > 0) ? static_cast<int>(std::ceil(
-                            static_cast<double>(totalElements) / size)) : 0;
-
-    int from = page * size;
-    int to   = std::min(from + size, totalElements);
+Json::Value makePage(const std::vector<T>& items, long long totalElements, int page, int size) {
+    int totalPages = (size > 0) ? static_cast<int>(std::ceil(
+                          static_cast<double>(totalElements) / size)) : 0;
 
     Json::Value content(Json::arrayValue);
-    if (from < totalElements) {
-        for (int i = from; i < to; ++i) {
-            content.append(items[i].toJson());
-        }
+    for (const auto& item : items) {
+        content.append(item.toJson());
     }
 
     Json::Value result;
