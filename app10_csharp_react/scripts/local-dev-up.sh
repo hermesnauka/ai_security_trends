@@ -16,11 +16,11 @@ mkdir -p "$RUN_DIR"
 TOOLS="/c/Users/krish/tools"
 PGBIN="$TOOLS/pgsql/bin"
 PGDATA="C:\\Users\\krish\\tools\\pgdata"
-JAVA_HOME="$TOOLS/jdk-21.0.11+10"
-MAVEN_BIN="$TOOLS/apache-maven-3.9.9/bin"
 
-export JAVA_HOME
-export PATH="$JAVA_HOME/bin:$MAVEN_BIN:$PGBIN:$PATH"
+# dotnet is assumed to already be on PATH (the .NET installer adds it there
+# on every platform) - unlike Java/Maven above, there's no known-fixed
+# install path on this machine to hardcode.
+export PATH="$PGBIN:$PATH"
 
 echo "== Postgres =="
 if "$PGBIN/pg_isready.exe" -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
@@ -31,14 +31,20 @@ else
     echo "started"
 fi
 
-echo "== Backend (Spring Boot, :8080) =="
+echo "== Backend (ASP.NET Core / dotnet run, :8080) =="
 if curl -sf http://localhost:8080/api/v1/frameworks >/dev/null 2>&1; then
     echo "already running"
 else
     (
         cd "$ROOT_DIR/backend"
-        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME=securevision DB_USER=securevision DB_PASSWORD=securevision
-        nohup mvn spring-boot:run > "$RUN_DIR/backend.log" 2>&1 &
+        if [ ! -f .env ]; then
+            echo "backend/.env is missing - copy .env.example and fill in every value first." >&2
+            exit 1
+        fi
+        set -a
+        source .env
+        set +a
+        nohup dotnet run --project src/SharpGuard.Api > "$RUN_DIR/backend.log" 2>&1 &
         echo $! > "$RUN_DIR/backend.pid"
     )
     echo "starting (PID $(cat "$RUN_DIR/backend.pid")), waiting for :8080 ..."
@@ -73,6 +79,5 @@ fi
 echo
 echo "Frontend:    http://localhost:5173"
 echo "Backend API: http://localhost:8080/api/v1/frameworks"
-echo "Swagger UI:  http://localhost:8080/swagger-ui.html"
 echo "Logs:        $RUN_DIR/{postgres,backend,frontend}.log"
 echo "Stop with:   scripts/local-dev-down.sh"
