@@ -37,7 +37,7 @@ if curl -sf http://localhost:8080/api/v1/frameworks >/dev/null 2>&1; then
 else
     (
         cd "$ROOT_DIR/backend"
-        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME=securevision DB_USER=securevision DB_PASSWORD=securevision
+        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME=securevision DB_USER=securevision DB_PASSWORD=${POSTGRES_PASSWORD}
         nohup mvn spring-boot:run > "$RUN_DIR/backend.log" 2>&1 &
         echo $! > "$RUN_DIR/backend.pid"
     )
