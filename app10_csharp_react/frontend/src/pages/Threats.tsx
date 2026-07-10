@@ -18,7 +18,8 @@ export default function Threats() {
   const q = params.get('q') ?? ''
   const severity = params.get('severity') ?? ''
   const frameworkCode = params.get('frameworkCode') ?? ''
-  const page = Number(params.get('page') ?? '0')
+  const rawPage = Number(params.get('page'))
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 0
 
   useEffect(() => {
     api.getFrameworks().then(setFrameworks).catch(() => {})
@@ -28,12 +29,22 @@ export default function Threats() {
     api
       .getThreats({ q, severity, frameworkCode, page, size: PAGE_SIZE })
       .then((result) => {
+        // A page beyond the last valid one (stale link, hand-edited URL,
+        // filters just narrowed the result set) returns empty content
+        // rather than an error - self-correct to the last real page
+        // instead of leaving the UI stuck showing an empty list next to a
+        // page indicator like "1000 / 2" (found by probing this directly).
+        if (result.content.length === 0 && page > 0 && result.totalPages > 0 && page >= result.totalPages) {
+          goToPage(result.totalPages - 1, true)
+          return
+        }
         setThreats(result.content)
         setTotalElements(result.totalElements)
         setTotalPages(result.totalPages)
         setError(null)
       })
       .catch(() => setError('Nie udało się wczytać zagrożeń.'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, severity, frameworkCode, page])
 
   function updateFilter(key: string, value: string) {
@@ -44,10 +55,10 @@ export default function Threats() {
     setParams(next)
   }
 
-  function goToPage(nextPage: number) {
+  function goToPage(nextPage: number, replace = false) {
     const next = new URLSearchParams(params)
     next.set('page', String(nextPage))
-    setParams(next)
+    setParams(next, { replace })
   }
 
   return (
