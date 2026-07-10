@@ -16,6 +16,9 @@ export default function NavBar() {
         <NavLink to="/frameworks" className={linkClass}>
           Frameworki
         </NavLink>
+        <NavLink to="/threats" className={linkClass}>
+          Zagrożenia
+        </NavLink>
       </div>
     </nav>
   )

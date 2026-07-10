@@ -19,7 +19,18 @@ async function request<T>(path: string): Promise<T> {
 export const api = {
   getFrameworks: () => request<Framework[]>('/frameworks'),
   getFramework: (code: string) => request<Framework>(`/frameworks/${code}`),
-  getThreats: (params: { frameworkCode?: string; severity?: string; q?: string; page?: number; size?: number } = {}) => {
+  getThreats: (
+    params: {
+      frameworkCode?: string
+      severity?: string
+      stride?: string
+      tag?: string
+      q?: string
+      page?: number
+      size?: number
+      sort?: string
+    } = {},
+  ) => {
     const search = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== '') search.set(key, String(value))

@@ -1,5 +1,5 @@
-// Mirrors backend DTOs in com.securevision.dto - keep in sync by hand for now;
-// Phase 4+ could generate these from the OpenAPI spec instead.
+// Mirrors backend DTOs in SharpGuard.Api.Dtos - keep in sync by hand for now;
+// Phase 4+ could generate these from an OpenAPI spec instead.
 
 export interface Framework {
   id: string

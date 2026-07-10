@@ -17,7 +17,7 @@ export default function Dashboard() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    if (query.trim()) navigate(`/frameworks?q=${encodeURIComponent(query.trim())}`)
+    if (query.trim()) navigate(`/threats?q=${encodeURIComponent(query.trim())}`)
   }
 
   return (

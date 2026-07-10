@@ -2,14 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '@/api/client'
 import type { Framework, ThreatSummary } from '@/types'
-
-const SEVERITY_STYLES: Record<string, string> = {
-  CRITICAL: 'bg-red-950 text-red-300 border-red-900',
-  HIGH: 'bg-orange-950 text-orange-300 border-orange-900',
-  MEDIUM: 'bg-yellow-950 text-yellow-300 border-yellow-900',
-  LOW: 'bg-blue-950 text-blue-300 border-blue-900',
-  INFO: 'bg-slate-800 text-slate-300 border-slate-700',
-}
+import { SEVERITY_STYLES } from '@/lib/severity'
 
 export default function FrameworkDetail() {
   const { code } = useParams<{ code: string }>()
@@ -43,7 +36,11 @@ export default function FrameworkDetail() {
       <h2 className="mt-8 mb-3 text-lg font-semibold text-white">Zagrożenia ({threats.length})</h2>
       <div className="space-y-2">
         {threats.map((t) => (
-          <div key={t.id} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-4">
+          <Link
+            key={t.id}
+            to={`/threats/${t.id}`}
+            className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-slate-600"
+          >
             <div>
               <div className="font-mono text-xs text-slate-500">{t.code}</div>
               <div className="font-medium text-white">{t.title}</div>
@@ -52,7 +49,7 @@ export default function FrameworkDetail() {
             <span className={`rounded-full border px-3 py-1 text-xs font-medium ${SEVERITY_STYLES[t.severity] ?? SEVERITY_STYLES.INFO}`}>
               {t.severity}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
