@@ -1,0 +1,41 @@
+require("spec.spec_helper")
+local http = require("spec.support.http_client")
+
+describe("GET /api/v1/threats", function()
+  it("combines framework and severity filters", function()
+    local res = http.get("/api/v1/threats", { frameworkCode = "OWASP_LLM", severity = "critical" })
+    assert.are.equal(200, res.status)
+    assert.is_true(#res.json.content > 0)
+    for _, threat in ipairs(res.json.content) do
+      assert.are.equal("OWASP_LLM", threat.frameworkCode)
+      assert.are.equal("critical", threat.severity)
+    end
+  end)
+
+  it("400s for an invalid severity value", function()
+    local res = http.get("/api/v1/threats", { severity = "catastrophic" })
+    assert.are.equal(400, res.status)
+  end)
+
+  it("returns the shared Page<T> envelope shape", function()
+    local res = http.get("/api/v1/threats", { size = 5 })
+    assert.is_not_nil(res.json.content)
+    assert.is_not_nil(res.json.totalElements)
+    assert.is_not_nil(res.json.totalPages)
+    assert.are.equal(0, res.json.number)
+    assert.are.equal(5, res.json.size)
+  end)
+end)
+
+describe("GET /api/v1/threats/:id", function()
+  it("returns full detail for a seeded threat", function()
+    local res = http.get("/api/v1/threats/A01:2021")
+    assert.are.equal(200, res.status)
+    assert.are.equal("Broken Access Control", res.json.title)
+  end)
+
+  it("404s for an unknown threat code", function()
+    local res = http.get("/api/v1/threats/ZZ99:9999")
+    assert.are.equal(404, res.status)
+  end)
+end)

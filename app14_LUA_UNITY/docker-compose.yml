@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: luaguard
+      POSTGRES_PASSWORD: luaguard
+      POSTGRES_DB: luaguard_development
+    volumes:
+      - luaguard_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432" # 5434 host-side — avoids colliding with the shared local Postgres (:5432) and app13's own :5433 (../CLAUDE.md)
+
+  backend:
+    build: ./backend
+    environment:
+      LAPIS_ENVIRONMENT: development
+      DB_HOST: postgres
+      DB_USER: luaguard
+      DB_PASSWORD: luaguard
+      DB_NAME: luaguard_development
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET before running docker compose up}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+    depends_on:
+      - postgres
+    ports:
+      - "9292:9292"
+
+  # Serves the Unity WebGL build's static output (a manual, non-CI release
+  # artifact, PLAN.md §12) and proxies /api/*+/health to the Lua backend.
+  # The desktop Unity build talks to `backend` directly over HTTPS and does
+  # not go through this container at all.
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      backend:
+        condition: service_started
+    volumes:
+      - ./frontend/WebGLBuild:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8081:80" # 8081 host-side — avoids colliding with app13's own :8080 (../CLAUDE.md)
+
+volumes:
+  luaguard_pgdata:

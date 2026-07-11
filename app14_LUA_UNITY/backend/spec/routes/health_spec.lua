@@ -1,0 +1,10 @@
+require("spec.spec_helper")
+local http = require("spec.support.http_client")
+
+describe("GET /health", function()
+  it("returns status UP", function()
+    local res = http.get("/health")
+    assert.are.equal(200, res.status)
+    assert.are.equal("UP", res.json.status)
+  end)
+end)
