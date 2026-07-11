@@ -1,83 +1,109 @@
-# GoSentry 2026
+# HaskShield 2026 (app06_HASKELL_react)
 
-Only for self-educational purpose and "open" standard community and values:
-this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
-This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+SecureVision's Haskell implementation: `servant` + `hasql` backend, Vite/React/TypeScript
+frontend. Phase-1 scope only — mirrors `app01_react`'s actual (not aspirational) API contract.
+See `CLAUDE.md` for the full current-state summary, `backend/CLAUDE.md`/`frontend/CLAUDE.md`
+for stack-specific command/layout reference, and `../CLAUDE.md` for the shared sibling
+conventions.
 
+## There is no `docker-compose.yml` in this app
 
-## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+Unlike most siblings, this directory only has standalone `backend/Dockerfile` and
+`frontend/Dockerfile`, plus `nginx/nginx.conf` — no compose file ties them together. Run
+backend and frontend as two separate processes (see below). Don't invent a `docker compose up`
+command for this app; it doesn't exist here.
 
-ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
-In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+## Prerequisites
 
-### Quick start:
+- **GHC 9.8.4 + Cabal 3.16.1.0** (GHCup-managed) for the backend.
+- **Node.js** + npm for the frontend (Vite + React 18 + TypeScript + Tailwind).
+- **PostgreSQL**, reachable at whatever `DB_HOST`/`DB_PORT` you configure.
+- A `.env` file (copy `.env.example`) with `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`,
+  `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`, `JWT_SECRET` (HS256, ≥32 bytes),
+  `JWT_EXPIRATION_MINUTES`, `ADMIN_USERNAME`/`ADMIN_PASSWORD_HASH` (a bcrypt hash — the same
+  `$2b$`/`$2a$`/`$2y$` format app01_react uses is directly interoperable here), and `PORT`.
+
+## Quick start (this machine): `scripts/local-dev-up.sh`
+
+This machine has no Docker installed, so `scripts/local-dev-up.sh` starts all three pieces
+(Postgres, backend, frontend) as standalone portable installs under `C:\Users\krish\tools\`
+and `C:\ghcup\` instead of containers — **machine-specific, hardcoded tool paths, not portable
+to another setup**. (Its own header comment says "docker-compose.yml is the real, portable way
+to run this project — use it if Docker is installed" — that line is stale/aspirational; no
+compose file actually exists in this app, see above.)
 
 ```bash
 ./scripts/local-dev-up.sh
 ```
 
-Sibling project to `app01_react` & `app02_angular` (Java/Spring Boot), `app03_python_django` (Python/Django), and `app04_scala_react` (Scala/ZIO) - same domain model, backend written **entirely in Go, standard library first**, contrasted directly against the JVM/Python siblings (see `PLAN.md` §0: no classes, no exceptions, no GC-tuning debates, a single static binary instead of a JAR/interpreter tree).
+This creates/reuses a Postgres database named **`haskshield`**, not `securevision` — this
+machine runs one shared, Docker-less Postgres instance across every `app0N_*` course project,
+and `app01_react`'s Java/Flyway backend already owns a `securevision` database with its own
+schema. Don't "fix" the DB name back to `securevision`; it would collide.
 
-**Status:** Phase 1 — Foundation skeleton only. See `PLAN.md` for the full 7-phase roadmap (all six Cornucopia decks including Digital-by-Default Harms, i18n, full-text search, River-based export, code samples in 5 languages, etc.) — none of that is implemented yet.
+First run compiles every Haskell dependency from scratch and can take several minutes. Once up:
 
-## What's here (Phase 1 / milestone M1)
-
-- **Backend** (`backend/`): Go 1.23, `chi` v5 router, **`sqlc`** for compile-time-checked SQL (D-02 — `internal/store/queries/*.sql` → `sqlc generate` → typed, schema-verified Go, committed per `PLAN.md` §9). `Framework`/`Threat` domain types, `goose` migrations for all 9 data-model entities (schema now, only Framework/Threat actually wired to queries - the rest wait for their own phase, same pattern as the other sibling apps). `GET /api/v1/frameworks`, `GET /api/v1/frameworks/:code`, paginated+filterable `GET /api/v1/threats` (`frameworkCode`, `severity`, `stride`, `category`, `tag`, `q` - all as ONE static query using `sqlc.narg()`, not a runtime query builder), `GET /api/v1/threats/:id`. `SecurityHeaders` middleware (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), a `Recover` middleware that turns panics into a generic 500 with full detail `slog`-logged server-side only (D-01). RS256 JWT login (`golang-jwt/jwt` v5) matching the JWT-skeleton pattern the other sibling apps use — no admin CRUD endpoint exists yet for it to actually gate. `cmd/api`, `cmd/worker` (skeleton only, no River jobs registered yet), and `cmd/seed` are three separate compiled binaries sharing one Go module, matching D-05's stated process-boundary claim.
-- **Frontend** (`frontend/`): React 18 / TypeScript / Vite / Tailwind — same Dashboard/Frameworks/FrameworkDetail pages as the other React-frontend sibling apps' Phase 1 scope.
-- **Infra**: `docker-compose.yml` — `cmd/api`/`cmd/worker` ship as genuinely `FROM scratch` static-binary images (D-06); a separate one-shot `migrate`/`seed` pair (using the non-scratch build stage, which has the `goose` CLI) runs before `api`/`worker` start, via `depends_on: condition: service_completed_successfully`.
-
-## What's deliberately NOT here yet
-
-Everything in `PLAN.md` Phases 2–7: nested mitigations/code samples on threat detail, the cross-reference matrix, full-text search, River-based CSV/PDF export (the `cmd/worker` binary exists but registers no jobs), real i18n (`gs_locale` toggle not wired), the entire six-deck Cornucopia card catalogue including Digital-by-Default Harms, the opaque-type ref validators (D-07), `bluemonday` sanitization (D-04 - no admin CRUD to sanitize input for yet), Redis-based rate limiting (D-08), `golangci-lint`/`govulncheck` CI gates, and the test suite. `swaggo/swag` (tech-stack table) also didn't make it into Phase 1 - plain chi routes only, no `/api/v1/docs/swagger-ui/` yet.
-
-## What was already sitting here before this build
-
-Like two of its siblings, this directory had a `frontend/`, `nginx/`, `.env`, and `scripts/` before any of the above was written - a mechanical copy-paste of `app01_react`'s output (package.json said `"securevision-frontend"`, `docker-compose.yml`'s content had been pasted into `.env` instead of its own file, `nginx.conf` proxied `/swagger-ui/`+`/v3/api-docs/` paths that don't exist here). All rebranded/rewritten; `backend/` didn't exist at all.
-
-## Real things worth knowing if you touch the build
-
-- **Go module toolchain auto-upgrade fought the `PLAN.md`-pinned Go 1.23 repeatedly.** `go get <pkg>@latest` for `pgx/v5`, then again for `goose/v3`, each pulled a version whose own `go.mod` required Go 1.24/1.25+, which cascades: Go's `go` directive is derived from the *maximum* requirement across the whole resolved graph, so one greedy transitive bump silently drags the whole module's minimum Go version up. Fixed by explicitly pinning to the newest version of each *direct* dependency that still declares a Go 1.23-or-earlier requirement (checked directly against `proxy.golang.org`'s per-version `.mod` files, not guessed): `pgx/v5@v5.7.6`, `golang.org/x/crypto@v0.37.0`. Ended up **not** adding `goose` as a library dependency at all (see next point) specifically because chasing this kept re-triggering the same cascade for comparatively little benefit.
-- **Embedding migrations into the binary via `goose`-as-a-library was attempted and reverted.** The idea - use Go's `embed.FS` to bake `migrations/*.sql` directly into the `cmd/api` binary, matching D-06's "single static binary" story even more literally - kept re-triggering the toolchain cascade above (goose's own transitive deps wanted newer everything). Backed out in favor of the already-proven-working approach: `goose` as a separate CLI, invoked as a one-shot `migrate` step in `docker-compose.yml` (using the non-scratch build stage, which has the toolchain) before the genuinely-`FROM scratch` `api`/`worker` images start. Phase 1's own checklist only requires migrations to exist and run, not to be embedded - this was a nice-to-have that wasn't worth the fight.
-- **`go run`'s child-process model breaks naive port-based `taskkill` on Windows.** `go run ./cmd/api` compiles to a temp binary (named `api.exe` here) and execs it as a *child* of the `go` process. `netstat`'s LISTENING-socket-to-PID mapping was observed pointing at the parent `go.exe` PID; killing just that PID left `api.exe` running and still serving on :8080 - confirmed by actually re-checking the port after "stopping" it, not just trusting the script's own success message. Fixed `scripts/local-dev-down.sh` to use `taskkill //F //T` (tree-kill) plus a fallback `taskkill //IM api.exe` in case the parent had already exited and the child had been reparented past the tree-kill's reach.
-- Everything else - the `sqlc` compile-time query generation, the chi router, RS256 JWT signing/verification, the pagination shape, the security headers - worked on the **first real run**, no bugs found. Notably cleaner than the other four sibling apps' first attempts; consistent with `PLAN.md` §0's own thesis about Go's simpler type system and lack of macro/reflection-based footguns.
-
-## Quick start
-
-```bash
-docker compose up --build
-```
-
-- Frontend: http://localhost:8081
+- Frontend: http://localhost:5173
 - Backend API: http://localhost:8080/api/v1/frameworks
-- Health: http://localhost:8080/api/v1/health
+- Health: http://localhost:8080/health
 
-**M1 acceptance check (per `PLAN.md` §16):** `docker compose up` → `cmd/api` health check 200; React SPA loads. (The Docker build itself is untested on this machine - no Docker installed here - but the `migrate`/`seed`/`api` steps it orchestrates were each run directly and verified working, including a real `goose up` against Postgres and a real `sqlc generate` run.)
-
-### Local dev (without Docker)
+Stop everything with:
 
 ```bash
-# backend - needs Go 1.23+, a local Postgres on 5432, and goose/sqlc on PATH
-# (go install github.com/pressly/goose/v3/cmd/goose@v3.24.0 and
-#  go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest)
+./scripts/local-dev-down.sh
+```
+
+## Running it manually (any machine, without the script)
+
+```bash
+# 1. Postgres: create the `haskshield` database (or whatever DB_NAME you set) first.
+
+# 2. Backend — from backend/, with DB_*/JWT_*/ADMIN_* exported per .env.example:
 cd backend
-goose -dir migrations postgres "postgres://gosentry:gosentry@localhost:5432/gosentry?sslmode=disable" up
-go run ./cmd/seed
-go run ./cmd/api
+cabal build all
+cabal run api
+# Applies migrations/*.sql on every startup (idempotent) before serving on :8080.
 
-# frontend - proxies /api/v1 to localhost:8080 via vite.config.ts
-cd frontend && npm install && npm run dev
-# → http://localhost:5173 (Vite's default dev-server port)
+# 3. Frontend — in a second terminal:
+cd frontend
+npm install
+npm run dev
+# Vite dev server on :5173, proxies /api/v1 -> localhost:8080
 ```
 
-**This machine specifically** has no Docker installed. `scripts/local-dev-up.sh` /
-`scripts/local-dev-down.sh` start/stop the same pieces (Postgres, backend, frontend)
-as standalone portable installs under `C:\Users\krish\tools\` instead of containers
-(including a portable Go toolchain under `tools/go/` and `goose`/`sqlc` under
-`tools/gopath/bin/`). Machine-specific (hardcoded tool paths) — not portable to
-other setups; use `docker compose` there instead.
-
-### Regenerating sqlc code after changing a query
+## Verifying it's working
 
 ```bash
-cd backend && sqlc generate   # writes internal/store/sqlcgen/ - commit the output
+curl http://localhost:8080/health
+curl http://localhost:8080/api/v1/frameworks
 ```
+
+Then open http://localhost:5173 — Dashboard, Frameworks, FrameworkDetail, and Threats pages
+should all load. **There is no login page in the frontend** — the `POST /api/v1/auth/login`
+endpoint exists and works (`curl -X POST http://localhost:8080/api/v1/auth/login -H
+'Content-Type: application/json' -d '{"username":"...","password":"..."}'`), but nothing in
+`frontend/src` calls it yet (same gap noted for app01/app02).
+
+## Running the tests
+
+```bash
+cd backend
+cabal test
+# ServiceSpec.hs: pure, hspec + QuickCheck, no DB needed
+# ApiSpec.hs: hspec-wai, needs a real reachable Postgres (start one via
+#             ../scripts/local-dev-up.sh first, or export DB_*/JWT_*/ADMIN_* manually)
+```
+
+```bash
+cd frontend
+npm run build   # tsc -b && vite build — clean as of the last verification
+npm run lint    # eslint . --ext ts,tsx — clean as of the last verification
+```
+
+## Known deviations from app01_react (deliberate, see `CLAUDE.md`)
+
+- Auth is JWT **HS256** with a shared `JWT_SECRET` — matches what app01's `JwtService` actually
+  does, not the RS256 described in this app's own `PLAN.md`'s aspirational design.
+- `stride`/`tags`/`cve_references` are native Postgres `TEXT[]`, not app01's comma-joined
+  `TEXT` column (same JSON shape on the wire).
+- Migrations run via a small custom runner (`src/Migrate.hs`), not `hasql-th` or Flyway.
