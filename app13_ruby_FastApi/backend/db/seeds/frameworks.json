@@ -1,0 +1,79 @@
+[
+  {
+    "code": "OWASP_WEB",
+    "name": "OWASP Top 10 (Web Application Security Risks)",
+    "version": "2021",
+    "description": "The ten most critical web application security risks, as ranked by the OWASP community.",
+    "referenceUrl": "https://owasp.org/www-project-top-ten/"
+  },
+  {
+    "code": "OWASP_LLM",
+    "name": "OWASP Top 10 for Large Language Model Applications",
+    "version": "2025",
+    "description": "The ten most critical security risks specific to applications built on large language models.",
+    "referenceUrl": "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+  },
+  {
+    "code": "OWASP_AGENTIC",
+    "name": "OWASP Top 10 for Agentic AI Applications",
+    "version": "2026",
+    "description": "Security risks specific to autonomous, tool-using AI agents, including excessive agency and multi-agent trust boundary failures.",
+    "referenceUrl": "https://owasp.org/www-project-top-10-for-agentic-ai-applications/"
+  },
+  {
+    "code": "OWASP_API",
+    "name": "OWASP API Security Top 10",
+    "version": "2023",
+    "description": "The most critical security risks to APIs, distinct from the general Web Top 10.",
+    "referenceUrl": "https://owasp.org/www-project-api-security/"
+  },
+  {
+    "code": "OWASP_CLIENT_SIDE",
+    "name": "OWASP Client-Side Top 10",
+    "version": "2024",
+    "description": "Security risks that manifest in browser-executed, client-side application code.",
+    "referenceUrl": "https://owasp.org/www-project-client-side-top-10/"
+  },
+  {
+    "code": "OWASP_CICD",
+    "name": "OWASP Top 10 CI/CD Security Risks",
+    "version": "2023",
+    "description": "The most critical security risks in continuous integration and continuous delivery pipelines.",
+    "referenceUrl": "https://owasp.org/www-project-top-10-ci-cd-security-risks/"
+  },
+  {
+    "code": "OWASP_OAT",
+    "name": "OWASP Automated Threats to Web Applications (OAT)",
+    "version": "2018",
+    "description": "A catalogue of automated threats (bots, scraping, credential stuffing, and related abuse) against web applications.",
+    "referenceUrl": "https://owasp.org/www-project-automated-threats-to-web-applications/"
+  },
+  {
+    "code": "OWASP_MASVS",
+    "name": "OWASP Mobile Application Security Verification Standard",
+    "version": "2.0",
+    "description": "A standard for mobile app security, defining verifiable security requirements across seven categories.",
+    "referenceUrl": "https://mas.owasp.org/MASVS/"
+  },
+  {
+    "code": "MITRE_ATLAS",
+    "name": "MITRE ATLAS",
+    "version": "2026",
+    "description": "Adversarial Threat Landscape for Artificial-Intelligence Systems: real-world tactics and techniques against ML-enabled systems.",
+    "referenceUrl": "https://atlas.mitre.org/"
+  },
+  {
+    "code": "COMPTIA_SECAI",
+    "name": "CompTIA SecurityAI+ (SecAI+) and Security+ SY0-701",
+    "version": "2026",
+    "description": "Vendor-neutral certification topics covering foundational security and AI/LLM-specific security knowledge.",
+    "referenceUrl": "https://www.comptia.org/certifications"
+  },
+  {
+    "code": "STRIDE",
+    "name": "STRIDE Threat Modeling (Microsoft Elevation of Privilege)",
+    "version": "5.0",
+    "description": "A threat-modeling mnemonic and card-based methodology: Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege.",
+    "referenceUrl": "https://github.com/OWASP/cornucopia"
+  }
+]

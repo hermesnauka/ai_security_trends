@@ -1,0 +1,19 @@
+{
+  "name": "rubyguard-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "RubyGuard 2026 frontend — deliberately framework-free vanilla ES2022 JS (PLAN.md D-08).",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --outfile=dist/bundle.js --format=esm",
+    "dev": "esbuild src/main.js --bundle --outfile=dist/bundle.js --format=esm --watch --servedir=.",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "vitest": "^2.1.0",
+    "jsdom": "^25.0.0",
+    "@playwright/test": "^1.48.0"
+  }
+}

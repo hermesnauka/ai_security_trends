@@ -1,0 +1,8 @@
+{
+  "mitre_refs": [
+    "AML.T0000", "AML.T0002", "AML.T0010", "AML.T0012", "AML.T0015",
+    "AML.T0018", "AML.T0019", "AML.T0020", "AML.T0024", "AML.T0025",
+    "AML.T0029", "AML.T0041", "AML.T0043", "AML.T0046", "AML.T0051"
+  ],
+  "note": "SR-07: mirrors DR-01.3's minimum technique set from requirements.md. Extended the same way as ref-allowlists.json."
+}

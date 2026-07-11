@@ -1,0 +1,12 @@
+{
+  "_comment": "D-04: card_kind and severity for this deck are forced by Card_Loader to design_harm/null based on filename alone, never read from this file. Only owasp_refs/mitre_refs are curated here.",
+  "SCO2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "SCO3": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "SCO4": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "ARC2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "ARC3": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "AGE2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "TRU2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "POR2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] },
+  "COR2": { "owasp_refs": ["A04:2021"], "mitre_refs": [] }
+}

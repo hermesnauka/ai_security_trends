@@ -1,0 +1,35 @@
+source "https://rubygems.org"
+
+ruby "3.4.0"
+
+gem "grape", "~> 2.1"
+gem "grape-entity", "~> 1.0"
+gem "grape-swagger", "~> 2.1"
+gem "puma", "~> 6.4"
+gem "rack", "~> 3.1"
+gem "rackup", "~> 2.1"
+gem "sequel", "~> 5.87"
+gem "pg", "~> 1.5"
+gem "jwt", "~> 2.9"
+gem "bcrypt", "~> 3.1"
+gem "rack-attack", "~> 6.7"
+gem "rack-cors", "~> 2.0"
+gem "psych", "~> 5.1"
+# Declared explicitly (not just relied on as rack-attack's transitive
+# dependency) since environment.rb requires "active_support/cache/memory_store"
+# directly to configure the rate-limiter's cache store (SR-05).
+gem "activesupport", "~> 7.2"
+
+group :development, :test do
+  gem "rspec", "~> 3.13"
+  gem "rack-test", "~> 2.1"
+  gem "rantly", "~> 3.1"
+  gem "rerun", "~> 0.14"
+end
+
+group :development do
+  gem "brakeman", "~> 6.2", require: false
+  gem "bundler-audit", "~> 0.9", require: false
+  gem "rubocop", "~> 1.68", require: false
+  gem "rubocop-performance", "~> 1.23", require: false
+end

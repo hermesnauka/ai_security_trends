@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rubyguard
+      POSTGRES_PASSWORD: rubyguard
+      POSTGRES_DB: rubyguard_development
+    volumes:
+      - rubyguard_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # 5433 host-side — avoids colliding with the shared local Postgres instance on 5432 (../CLAUDE.md)
+
+  backend:
+    build: ./backend
+    environment:
+      RACK_ENV: development
+      DATABASE_URL: postgres://rubyguard:rubyguard@postgres/rubyguard_development
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET before running docker compose up}
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      - postgres
+    command: >
+      sh -c "bundle exec rake db:migrate &&
+             bundle exec rake db:seed &&
+             ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme} bundle exec rake db:seed_admin &&
+             bundle exec puma -C config/puma.rb"
+    ports:
+      - "9292:9292"
+
+  # `index.html`'s <script type="module" src="src/main.js"> is served and run
+  # directly as native browser ES modules — no bundling step is required for
+  # the app to function at all (esbuild's `npm run build` in `frontend/`
+  # exists purely as an optional production-minification convenience, and
+  # produces `dist/bundle.js`, which nothing here references — don't wire it
+  # into this compose file as if it were required, that would misstate
+  # what's actually necessary).
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      backend:
+        condition: service_started
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+
+volumes:
+  rubyguard_pgdata:

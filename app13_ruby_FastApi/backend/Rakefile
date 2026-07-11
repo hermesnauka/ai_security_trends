@@ -1,0 +1,28 @@
+# frozen_string_literal: true
+
+require_relative "config/environment"
+
+namespace :db do
+  desc "Run pending Sequel migrations"
+  task :migrate do
+    Sequel::Migrator.run(DB, "db/migrations")
+    puts "Migrated to latest version."
+  end
+
+  desc "Seed the database from db/seeds/"
+  task :seed do
+    ContentSeeder.new(seeds_root: File.join(__dir__, "db", "seeds")).seed!
+    puts "Seeding complete."
+  end
+
+  desc "Seed the one admin user from ADMIN_USERNAME / ADMIN_PASSWORD env vars"
+  task :seed_admin do
+    username = ENV.fetch("ADMIN_USERNAME", "admin")
+    password = ENV.fetch("ADMIN_PASSWORD") { raise "ADMIN_PASSWORD environment variable is required" }
+
+    user = User.first(username: username) || User.new(username: username, role: "ADMIN")
+    user.password = password
+    user.save
+    puts "Admin user '#{username}' ready."
+  end
+end

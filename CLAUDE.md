@@ -1,4 +1,4 @@
-# Hermes_crewai_01 — course mono-repo (12 parallel SecureVision implementations)
+# Hermes_crewai_01 — course mono-repo (13 parallel SecureVision implementations)
 
 This repo is a comparative exercise for the "AI in Programming" course: the same
 product, **SecureVision** (a threat-modeling reference app — browse security
@@ -7,7 +7,7 @@ different stack per subdirectory, to compare AI-assisted development across
 ecosystems. Each `appNN_*` directory has its own `CLAUDE.md` with stack-specific
 detail — read this file first, then that one.
 
-## The 12 implementations
+## The 13 implementations
 
 | Dir | Stack | Status (2026-07-11) |
 |---|---|---|
@@ -23,13 +23,14 @@ detail — read this file first, then that one.
 | `app10_csharp_react` | C#/.NET 9 + React | backend+frontend built; HS256, matches app01 |
 | `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | real Swift source built (SwiftData models, ContentSeeder, Views) plus a real package-level test suite (XCTest+SwiftCheck, runnable via `swift test`) but **no `.xcodeproj` and never compiled** — no API, offline-only |
 | `app12_kotlin_android` | native Android (Compose/Room) | real Kotlin source built (Room entities/DAOs, ContentSeeder, repositories, Compose screens, `:data`/`:ui`/`:app` Gradle modules) plus a real test suite (JUnit4+Robolectric for `:data`, fakes for `:ui`, 2 instrumented Compose UI tests) but **never assembled/compiled** — no API, offline-only, structural twin of app11 |
+| `app13_ruby_FastApi` | Ruby (Grape/Sequel) + framework-free vanilla JS | backend+frontend built (matches app01's HS256 contract); its four planning docs were originally an accidental duplicate of app12's KotlinGuard content and were fully rewritten 2026-07-11; "FastApi" in the dir name is a style reference (Grape's `params`+`grape-swagger` chosen as the closest Ruby analogue to FastAPI's validation+auto-docs), not a literal Python dependency — see its own `CLAUDE.md`; never executed (no Ruby/Postgres/Node runtime in this environment) |
 
 This table was last verified against every app's actual filesystem/source on 2026-07-11.
 
 ## app01_react is the contract of record
 
 Every sibling with its own backend (`app02`, `app03`, `app05`, `app06`, `app07`,
-`app08`, `app10`) is supposed to mirror the API app01 *actually implements* —
+`app08`, `app10`, `app13`) is supposed to mirror the API app01 *actually implements* —
 **not** the aspirational design in any app's own `PLAN.md`. If a sibling's
 behavior disagrees with app01's Java source, the sibling is wrong, not app01.
 `app09` (WordPress) and `app11`/`app12` (native mobile, offline-only) are
@@ -40,7 +41,7 @@ One confirmed, standing exception as of 2026-07-11: **app05's auth is RS256**,
 not app01's HS256 — its own `PLAN.md` documents this and the Go code
 implements it consistently, so this is a real, intentional-looking deviation,
 not a bug to silently patch over. Every other sibling with a backend (app02,
-app03, app07, app08, app10) now correctly matches app01's HS256. Also note:
+app03, app07, app08, app10, app13) now correctly matches app01's HS256. Also note:
 app01 and app02's actual health-check route is Spring Actuator's
 `/actuator/health`, not the literal `/health` shown in the contract block
 below — the contract block describes the intended shape, app01's real route
@@ -66,7 +67,7 @@ Auth is JWT **HS256** with a shared `JWT_SECRET` (`JwtService`,
 `Keys.hmacShaKeyFor`) — app01 never had a key pair. Several sibling `PLAN.md`
 files independently assumed RS256; see "app01_react is the contract of
 record" above for exactly which siblings have since corrected that in code
-(app02, app03, app07, app08, app10) versus the one standing, intentional
+(app02, app03, app07, app08, app10, app13) versus the one standing, intentional
 exception (app05). Check app01's actual code, not any `PLAN.md`, before
 implementing auth in a new backend.
 
@@ -86,11 +87,14 @@ No Docker installed. Each app that needs one uses `scripts/local-dev-up.sh` /
 `C:\Users\krish\tools\` instead of containers. **Postgres is one shared,
 Docker-less instance across every app on this machine** (`:5432`) — each app's
 script only ensures its own role/DB exists (e.g. app01 owns `securevision`,
-app06 uses a separate `haskshield` DB to avoid colliding with it); stopping
-Postgres via any one app's `local-dev-down.sh` affects every other app
-currently using it. A real Docker Compose deployment (`docker compose up
---build`, per each app's own `docker-compose.yml`) gives each app its own
-container + volume with no such collision.
+app06 uses a separate `haskshield` DB to avoid colliding with it, app13 owns
+`rubyguard`); stopping Postgres via any one app's `local-dev-down.sh` affects
+every other app currently using it. A real Docker Compose deployment (`docker
+compose up --build`, per each app's own `docker-compose.yml`) gives each app
+its own container + volume with no such collision — app13's own
+`docker-compose.yml` maps its containerized Postgres to host port `5433`
+specifically to avoid colliding with the shared `:5432` instance if both are
+run at once.
 
 ## Operating mode
 

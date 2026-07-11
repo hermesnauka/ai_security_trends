@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RubyGuard 2026</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand" data-nav>RubyGuard 2026</a>
+    <nav>
+      <a href="/threats" data-nav data-i18n="nav.threats">Zagrożenia</a>
+      <a href="/search" data-nav data-i18n="nav.search">Szukaj</a>
+      <a href="/matrix" data-nav data-i18n="nav.matrix">Macierz</a>
+      <a href="/about" data-nav data-i18n="nav.about">O aplikacji</a>
+    </nav>
+    <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
+      <button data-locale="pl" data-testid="lang-pl">PL</button>
+      <button data-locale="en" data-testid="lang-en">EN</button>
+    </div>
+  </header>
+
+  <main id="app" data-testid="app-root"></main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+require:
+  - rubocop-performance
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.4
+  Exclude:
+    - "db/seeds/**/*"
+    - "vendor/**/*"
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "app/api/**/*" # Grape's `resource`/`get`/`params` DSL blocks are naturally long
+
+Metrics/MethodLength:
+  Max: 25

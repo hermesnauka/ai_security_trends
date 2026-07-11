@@ -1,601 +1,397 @@
-# KotlinGuard 2026 — Application Development Plan
+# RubyGuard 2026 — Application Development Plan
 
 **Version:** 1.0
-**Date:** 2026-07-07
+**Date:** 2026-07-11
 **Status:** Living document — updated after each sprint planning session
-**Directory:** `app12_kotlin_android`
-**Sibling projects:** `app01_react`/`app02_angular` (Java/Spring Boot), `app03_python_django` (Python/Django), `app04_scala_react` (Scala/ZIO), `app05_go_react` (Go), `app06_HASKELL_react` (Haskell), `app07_rust_react` (Rust), `app08_cpp_react` (C++), `app09_php_WORDPRESS` (PHP/WordPress), `app10_csharp_react` (C#/.NET), `app11_swift_ios` (Swift/iOS)
+**Directory:** `app13_ruby_FastApi`
+**Sibling projects:** `app01_react`/`app02_angular` (Java/Spring Boot), `app03_python_django` (Python/Django),
+`app04_scala_react` (Scala/ZIO), `app05_go_react` (Go), `app06_HASKELL_react` (Haskell), `app07_rust_react` (Rust),
+`app08_cpp_react` (C++), `app09_php_WORDPRESS` (PHP/WordPress), `app10_csharp_react` (C#/.NET),
+`app11_swift_ios` (Swift/iOS, offline), `app12_kotlin_android` (Kotlin/Android, offline)
+
+> **Correction note (2026-07-11):** the four planning docs previously in this directory
+> (`PLAN.md`, `requirements.md`, `SDLC_analysis.md`, `user_stories+tests.md`, `CLAUDE.md`)
+> were an accidental byte-for-byte duplicate of `app12_kotlin_android`'s KotlinGuard
+> content — wrong stack, wrong directory, wrong everything. All five files are rewritten
+> from scratch here for this app's actual stack.
 
 ---
 
-## 0. Note on the Stack — the Android Twin of `app11_swift_ios`
+## 0. Note on the Stack — a Ruby Backend, FastAPI in Spirit
 
-This application is a **native Android app, written entirely in Kotlin**, using **Jetpack Compose** for the interface and **Room** for on-device persistence. It is the eleventh backend/platform choice in this course's comparison series, and it is the direct structural twin of `app11_swift_ios`: no backend web framework, no REST API, no PostgreSQL/MySQL server, offline-first by default, with the same "no client-server model at all" departure that app introduced. This plan is written to be read *alongside* `app11_swift_ios`'s — most sections below note explicitly where the Android platform's answer to a given concern is the same shape as iOS's, and where it genuinely differs.
+This application's backend is written entirely in **Ruby**, using **Grape** — a
+declarative, DSL-based REST API framework for Rack — deliberately chosen (over the
+simpler, more minimal Sinatra) because it is the closest real Ruby analogue to Python's
+**FastAPI**, the framework hinted at by this directory's name:
 
-**Where Android's platform-level guarantees differ from iOS's, stated precisely rather than assumed equivalent:**
+- **Declarative parameter validation.** FastAPI validates request bodies/query params
+  against Pydantic models with type hints; Grape's `params do requires :severity, type:
+  String, values: %w[critical high medium low info] end` block plays the exact same role
+  — invalid input is rejected before a single line of endpoint logic runs, with an
+  auto-generated 400 error, not a hand-rolled `if params[:severity].nil?` check.
+- **Automatic OpenAPI/Swagger documentation.** FastAPI's signature "you get `/docs` for
+  free" feature is provided here by `grape-swagger`, which introspects the same `params`
+  blocks used for validation and generates a live OpenAPI 3.0 document — the same
+  single-source-of-truth relationship between validation and documentation FastAPI is
+  known for, not two things a developer must keep in sync by hand.
+- **What genuinely does NOT carry over: async/await.** FastAPI's other defining feature is
+  native `async def` endpoints on an ASGI server (Uvicorn). Ruby has no equivalent
+  language-level async/await in mainstream use for this kind of app; this project uses
+  Rack's conventional synchronous request model, served by **Puma** with its
+  multi-process/multi-thread worker pool — Ruby's actual, idiomatic answer to concurrency,
+  not a simulated async layer bolted on to look like FastAPI. This is stated explicitly
+  here rather than glossed over: **do not** claim this app is "as async as FastAPI" —
+  it isn't, and doesn't need to be for this workload (see §13 risk register).
+- **Unlike `app11_swift_ios`/`app12_kotlin_android`, this app has a real client-server
+  model** and follows the shared Phase-1 API contract `../CLAUDE.md` documents, the same
+  way `app02`, `app03`, `app05`, `app07`, `app08`, `app10` do — this app's own
+  `/api/v1/...` routes are supposed to match what `app01_react`'s Spring Boot backend
+  *actually implements*, not reinvent a shape. See §7 for the exact route table and where,
+  if anywhere, this plan states an intentional deviation (there is exactly one, matching
+  `app05_go_react`'s precedent of stating deviations explicitly rather than silently).
 
-- **Both platforms sandbox each app at the OS level**, but the mechanisms differ: iOS's App Sandbox is a single, Apple-controlled container model with an explicit, narrow entitlement list; Android's sandbox gives **each app its own Linux user ID (UID)**, enforced by the kernel and SELinux, with permissions declared in `AndroidManifest.xml`. Both are genuine, kernel-enforced isolation — this plan does not claim one is "more secure" than the other in the abstract — but Android's **inter-process communication surface (Intents, exported Activities/Services/BroadcastReceivers/ContentProviders)** is historically larger and has a longer history of misconfiguration-driven vulnerabilities (an unintentionally exported component reachable by any other app on the device) than iOS's comparatively more locked-down IPC model. This app's own threat model (§11) treats "exported component" hygiene as a first-class, Android-specific concern with no direct iOS equivalent.
-- **Room's `@Query` annotations are verified against the entity schema at compile time** by the Room compiler (via KSP) — a genuinely stronger, more direct analogue to `app05_go_react`'s `sqlc`/`app06_HASKELL_react`'s `hasql-th`/`app07_rust_react`'s `sqlx::query!` than `app11_swift_ios`'s `#Predicate` macro, because Room's compiler actually parses and validates the *SQL string* against the table schema, not merely a Swift/Kotlin expression tree.
-- **`kotlinx.serialization`'s default `Json` configuration rejects unrecognized keys unless `ignoreUnknownKeys = true` is explicitly set** — the *strict-by-default* end of the spectrum, the same tier as `app10_csharp_react`'s `YamlDotNet` and the **opposite default** from `app11_swift_ios`'s `Codable` (which is lenient-by-default). These two adjacent mobile-platform apps land on opposite sides of this series' recurring "strict vs. lenient by default" comparison, and this plan states that explicitly (§4 D-06) rather than assuming "mobile" implies one answer.
-- **The JVM/Kotlin ecosystem inherits a materially more mature SCA (Software Composition Analysis) tooling story than Swift's**, because Android/Kotlin dependencies are resolved via Gradle/Maven, for which the OWASP Dependency-Check Gradle plugin (checking against the NVD) is a mature, widely-adopted tool — closing the exact gap `app11_swift_ios`'s `requirements.md` SR-10.3 stated as an accepted, ecosystem-level limitation for Swift Package Manager.
-- **Distribution via Google Play** involves its own review process (Google Play's automated and human review, plus Play Protect scanning), generally faster and more automated than Apple's App Review, but still a real, external gate this plan budgets for (§13, `SDLC_analysis.md` Phase 5) — the same *category* of external check `app11_swift_ios` introduced to this series, with a different cadence.
+**Note on code samples:** the application still *teaches* countermeasures in five
+languages — Python, Java, Go, Scala, and Lua (§10) — because that is separate,
+deliberately polyglot **content**, not the application's own runtime. Ruby is not one of
+the five sample languages, the same "sample language ≠ implementation language" rule every
+sibling in this series follows (e.g. Kotlin is the app12 implementation language and is
+also not one of the five).
 
-**Note on code samples:** the application still *teaches* countermeasures in five languages — Python, Java, Go, Scala, and Lua (see §10) — because that is separate, deliberately polyglot **content**, not the application's own runtime. Kotlin is the JVM-adjacent, but distinct, language actually implementing this app; **Java** remains one of the five sample languages precisely because it is different from Kotlin as a matter of project scope, even though both run on the JVM/ART — the same "sample language ≠ implementation language" rule every sibling has followed is followed here too, and is worth stating explicitly given how close Kotlin and Java are as languages.
+---
+
+## 0.1 Source Material — What Actually Exists vs. What's Curated
+
+Per this series' now-standard provenance section (first introduced for `app09_php_WORDPRESS`,
+carried forward by every sibling since): `docs/Security Architects+ Comptia+OWASP LLM
+top10__v01b.md` covers, in detail: the **OWASP Top 10 for LLM Applications (2025/2026)**,
+the **OWASP Top 10 (Web Application, 2021)**, **MITRE ATLAS™** (with real technique IDs,
+e.g. `AML.T0051`), and **CompTIA Security+ SY0-701 / SecAI+ 2026** exam-objective topics
+(GRC, NIS2/UKSC references, AI-as-target / AI-as-weapon / AI-as-defense framing). It does
+**NOT** cover OWASP Agentic AI Top 10, OWASP API Security Top 10, OWASP Client-Side Top 10,
+OWASP CI/CD Security Top 10, OASIS/OAT (Automated Threats), or OWASP MASVS in any
+comparable depth — those framework rows exist in this app's catalogue with no seeded
+threats, exactly like every sibling.
+
+The six raw YAML decks under `docs/OWASP_stories/` (`webapp-cards-3.0-en.yaml`,
+`mobileapp-cards-1.1-en.yaml`, `__LLM_AI___companion-cards-1.0-en.yaml`,
+`STRIDE__eop-cards-5.0-en.yaml`, `RISKS__elevation-of-mlsec-cards-1.0-en.yaml`,
+`dbd-cards-1.0-en.yaml`) contain **only** `id`/`value`/`url`/`desc`/`misc` fields per card —
+**no** `severity`, no `card_kind`, no OWASP/MITRE cross-reference field exists in any raw
+source file. Every severity, design-harm/technical-threat classification, and
+OWASP/MITRE reference shown anywhere in this app is **curated content this team authors**,
+merged in at ingestion time — never a value extracted from the YAML. This is the same
+D-06-adjacent distinction every sibling since app09 states explicitly, because it is easy
+to forget while writing ingestion code and assume the YAML "must" carry a severity field
+somewhere.
 
 ---
 
 ## 1. Project Overview
 
-**Name:** KotlinGuard 2026
-**Purpose:** A bilingual (Polish/English) reference and learning app mapping security threats, vulnerabilities and mitigations across **OWASP** (Web Top 10, LLM Top 10, Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, Automated Threats/OAT, MASVS), **MITRE ATLAS**, and **CompTIA Security+ SY0-701 / SecAI+ 2026**, plus the full catalogue of **OWASP Cornucopia-family card decks** found in `docs/OWASP_stories/*.yaml`. Each threat is presented with working countermeasure code in **five languages**: Python, Java, Go, Scala, and Lua.
+**Name:** RubyGuard 2026
+**Purpose:** A bilingual (Polish/English) reference and learning web application mapping
+security threats, vulnerabilities and mitigations across **OWASP** (Web Top 10, LLM Top
+10, Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10,
+Automated Threats/OAT, MASVS), **MITRE ATLAS**, and **CompTIA Security+ SY0-701 / SecAI+
+2026**, plus the full catalogue of **OWASP Cornucopia-family card decks** found in
+`docs/OWASP_stories/*.yaml`. Each threat is presented with working countermeasure code in
+**five languages**: Python, Java, Go, Scala, and Lua.
 
-**Source material:** `docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md` and all six card decks under `docs/OWASP_stories/`:
-
-| File | Edition | Suits |
-|---|---|---|
-| `webapp-cards-3.0-en.yaml` | OWASP Cornucopia — Website App v3.0 | VE, AT, SM, AZ, CR, C, WC |
-| `mobileapp-cards-1.1-en.yaml` | OWASP Cornucopia — Mobile App v1.1 | PC, AA, NS, RS, CRM, CM, WC |
-| `__LLM_AI___companion-cards-1.0-en.yaml` | OWASP Cornucopia — Companion (AI/Cloud/DevOps) v1.0 | LLM, CLD, FRE, DVO, BOT, AAI, Common |
-| `STRIDE__eop-cards-5.0-en.yaml` | Microsoft "Elevation of Privilege" (STRIDE) v5.0 | SP, TA, RE, ID, DS, EP |
-| `RISKS__elevation-of-mlsec-cards-1.0-en.yaml` | "Elevation of MLSec" v1.0 | EMR, EIR, EOR, EDR |
-| `dbd-cards-1.0-en.yaml` | Digital-by-Default Harms Deck v1.0 | SCO, ARC, AGE, TRU, POR, COR, WC |
-
-All six decks are in scope from day one of this plan (§11, §15) — the gap the `app04_scala_react` plan initially had (and was later corrected for) is avoided here from the start, as it was for every subsequent sibling. As in `app11_swift_ios`, the **Mobile App deck (PC/AA/NS/RS/CRM/CM)** is dual-billed: browsable content (US-10) *and* the direct source of this app's own threat model (§11).
-
-**UI languages:** Polish (default) and English, switched instantly with no app restart, via an in-app `LocaleController` (§4 D-05) rather than requiring the user to change their Android system language.
+**UI languages:** Polish (default) and English, switched instantly with no page reload, via
+a `LanguageToggle` component backed by a small client-side i18n store (§4 D-05) — not a
+server round-trip per toggle.
 
 ---
 
 ## 2. Technology Stack
 
-### Application (100% Kotlin, no server component)
+### Backend
 | Layer | Technology | Version (2026) |
 |---|---|---|
-| Language | Kotlin | 2.1 |
-| Minimum OS | Android | API 26 (Android 8.0)+, target API 35 |
-| UI framework | Jetpack Compose (Material 3) | — |
-| State management | Compose `State`/`remember`, `ViewModel` (Jetpack Lifecycle) with `StateFlow` — no third-party state library | — |
-| Persistence | **Room** (annotation-processed via KSP) over an embedded SQLite store — no separate database server | — |
-| Querying | Room's `@Query` — the **SQL string is parsed and verified against the entity schema by the Room compiler at build time**, the strongest compile-time SQL-shape guarantee of any mobile app in this series | — |
-| Networking (optional feature only) | `OkHttp`/`Retrofit`, restricted by an explicit `network_security_config.xml` that disables cleartext traffic entirely — used only by the optional cross-device sync feature, never for core content | — |
-| Cross-device sync (optional) | **Google Sign-In** (Credential Manager API) + **Cloud Firestore** (a user-scoped collection) — Google-managed infrastructure, no custom auth server or custom sync protocol implemented by this project (§4 D-07), the Android analogue of `app11_swift_ios`'s Sign in with Apple + CloudKit choice | — |
-| Local secure storage | **`EncryptedSharedPreferences`** (AndroidX Security library) backed by the **Android Keystore** (hardware-backed where available) for the Firestore sync token only; all educational content is non-sensitive and stored in the ordinary Room database | — |
-| Serialization | **`kotlinx.serialization`** (`Json`, default `ignoreUnknownKeys = false` — strict by default) + **`kaml`** for YAML, which layers on the same strict `kotlinx.serialization` decoding (§4 D-06) | — |
-| Background tasks | **WorkManager** (Jetpack) — replaces every prior sibling's job-queue library (River/apalis/odd-jobs/Hangfire/WP-Cron/`BGTaskScheduler`) for periodic integrity re-verification; exports are generated synchronously on-device, handed to the native Share Sheet (`Intent.ACTION_SEND`) | — |
-| Export | `Intent.ACTION_SEND` with a `FileProvider`-shared URI — native Android share, no server-side rendering | — |
-| Localization | Android resource qualifiers (`values-pl/strings.xml`, `values/strings.xml`) for UI strings; a custom `LocaleController` (via `AppCompatDelegate.setApplicationLocales`, the modern **per-app language** API, Android 13+, with a manual fallback for older supported versions) for the in-app PL/EN toggle (§4 D-05) | — |
-| Testing | `JUnit 5` (unit) + `Kotest` (property-based testing module, Kotlin's QuickCheck/`proptest`/`SwiftCheck`/`eris` equivalent) + **Compose UI Testing** (`createAndroidComposeRule`, Jetpack's native UI-automation API — replaces Playwright/XCUITest, since this is a native Android UI, not a browser or an iOS UI) | TDD — see `user_stories+tests.md` |
-| SAST | **Android Lint** (built into the Android Gradle Plugin, with security-specific checks: `ExportedContentQuery`, `TrustAllX509TrustManager`, `AllowBackup`, `AllowAllHostnameVerifier`, and more) + `detekt` (Kotlin static analysis, style + complexity + some security-adjacent rules) | — |
-| SCA | **OWASP Dependency-Check's Gradle plugin** (`dependency-check-gradle`), checking every Gradle dependency against the NVD — a materially more mature tool than anything available for Swift Package Manager as of 2026, closing the exact gap `app11_swift_ios` states as an accepted limitation | — |
-| Release hardening | **R8** (code shrinking, obfuscation, and optimization for release builds) — an Android-specific hardening step with no direct iOS equivalent, making static reverse-engineering of a shipped APK meaningfully harder | — |
+| Language | Ruby | 3.4 |
+| API framework | **Grape** (Rack-based, declarative REST DSL) | 2.x |
+| App server | **Puma** (multi-process + thread pool) | 6.x |
+| ORM | **Sequel** (chosen over ActiveRecord — usable standalone without pulling in all of Rails; its `Sequel::Model` dataset API is a closer stylistic match to Grape's own minimalism) | 5.x |
+| Database | **PostgreSQL** — the same shared, Docker-less local instance every backend sibling on this machine uses (`../CLAUDE.md` "Local dev environment"); this app owns its own `rubyguard` role/DB | 16 |
+| Migrations | `Sequel::Migration` (plain Ruby migration files, `db/migrations/`) | — |
+| Auth | **JWT, HS256**, shared `JWT_SECRET` — matches `app01_react`'s actual contract exactly (`ruby-jwt` gem); no key pair, no RS256 (that is `app05_go_react`'s one stated, intentional exception, not a pattern to copy) | — |
+| Validation/docs | Grape `params` blocks + `grape-swagger` (auto-generated OpenAPI 3.0 at `/api/v1/swagger_doc`) — the FastAPI-equivalent pairing (§0) | — |
+| Serialization | `Grape::Entity` for response shaping (explicit allow-listed fields per entity — never `to_json` on a raw Sequel model row, which would leak every column) | — |
+| Password hashing | `bcrypt` (the one hardcoded admin credential, §4 D-01, is still bcrypt-hashed at rest, never compared in plaintext) | — |
+| Rate limiting | `rack-attack` (per-IP throttling on `/api/v1/auth/login` — brute-force mitigation, SR-05-equivalent) | — |
+| Testing | **RSpec** (unit + request specs, TDD — see `user_stories+tests.md`) + **`rantly`** (Ruby's closest property-based-testing library to QuickCheck/SwiftCheck/Kotest-property — used for the "every mitigation has all 5 languages" completeness property, §10) | — |
+| SAST | **Brakeman** (Ruby/Rack-aware static analyzer — SQL injection, mass assignment, command injection checks) | — |
+| SCA | **`bundler-audit`** (checks `Gemfile.lock` against the Ruby Advisory Database) | — |
+| Lint/style | **RuboCop** (with `rubocop-performance` and a security-leaning custom cop set) | — |
 
-### Infrastructure (there is no server infrastructure — this replaces every sibling's Docker Compose/Nginx/database section)
+### Frontend
+| Layer | Technology | Version (2026) |
+|---|---|---|
+| Language | **Vanilla JavaScript (ES2022 modules), no framework** — a deliberate choice, not an oversight (see below) | — |
+| Markup/styling | Plain HTML5 + CSS (custom properties for theming, no preprocessor) | — |
+| HTTP | native `fetch` | — |
+| i18n | a small hand-written `i18n.js` store (PL/EN string tables + `data-i18n` attribute binding), not a library — this app's own D-05 | — |
+| Build | **esbuild** (bundling + minification only — no framework compiler step needed since there is no framework) | — |
+| Testing | **Playwright** (this series' standard E2E tool for every browser-based frontend) + `vitest` for the handful of pure-JS unit-testable modules (`i18n.js`, API client wrappers) | — |
+
+**Why no frontend framework, unlike every other backend+SPA sibling (app01/02/05/07/08/10
+all pair with React or Angular):** this is a deliberate differentiator for the course
+comparison, not an oversight or a cost-cutting shortcut. Given the backend's own guiding
+principle is minimalism (Grape over Rails, Sequel over ActiveRecord), a framework-free
+frontend keeps that principle consistent end-to-end, and gives this course's comparison
+matrix a genuine "zero-framework, zero-build-step-for-logic" data point it currently
+lacks. This is a real, load-bearing decision documented here so nobody "fixes" it into
+React later without noticing it was intentional (§4 D-08).
+
+### Infrastructure (shared conventions, see `../CLAUDE.md`)
 | Component | Technology |
 |---|---|
-| Build & CI | GitHub Actions (Ubuntu or macOS runners both support the Android SDK/Gradle toolchain — this app's CI is more portable than `app11_swift_ios`'s macOS-only requirement) |
-| Distribution | Internal testing track → closed/open testing → Google Play production release — Google Play's review process is this project's external distribution gate (§13, `SDLC_analysis.md` Phase 5), generally faster-cadence than Apple's equivalent but not to be treated as a formality |
-| Crash/monitoring | Android Vitals (Google Play Console) + Firebase Crashlytics; no self-hosted Grafana/Loki/Prometheus stack is needed or appropriate for a client-only app |
-| Code signing | Android App Bundle (`.aab`) signed with a Play App Signing key; Google manages the final APK signing key, this project retains the upload key | — |
-| Secrets | No server-side secrets exist. The Firestore project configuration (`google-services.json`) is not a runtime secret in the traditional sense (it identifies, but does not authenticate, the backend project) — actual access control is enforced by Firestore Security Rules, scoped per authenticated user | — |
+| Local dev (no Docker) | `scripts/local-dev-up.sh`/`local-dev-down.sh`, portable Ruby toolchain, ensures the `rubyguard` Postgres role/DB exists on the shared local instance |
+| Containerized dev/CI | `docker-compose.yml` (Ruby/Puma + Postgres 16 + Nginx reverse proxy in front of Puma) |
+| CI | GitHub Actions — RSpec, Brakeman, `bundler-audit`, RuboCop, Playwright |
+| Reverse proxy (containerized) | Nginx — serves the built frontend `dist/` as static files and proxies `/api/*` to Puma |
 
 ---
 
-## 3. High-Level Architecture
+## 3. Architecture
 
 ```
-┌──────────────────────────── Android App Sandbox (separate Linux UID, D-01) ───────────┐
-│                                                                                           │
-│  Jetpack Compose UI  ──observes──►  ViewModels (StateFlow)  ──calls──►  Repositories      │
-│  (Threats, Cards, Matrix,             (ThreatBrowserViewModel,          (ThreatRepository, │
-│   StrideHeatmap, DigitalHarms,         CardBrowserViewModel, ...)         CardRepository,   │
-│   LocaleToggle, ...)                                                       ...)             │
-│                                                                              ▼               │
-│                                                                    Room Database (@Dao,      │
-│                                                                    @Entity: Threat, Card,    │
-│                                                                    Mitigation, CodeSample,    │
-│                                                                    CrossReference,            │
-│                                                                    ContentHash, ...)          │
-│                                                                              │                │
-│                                                                              ▼                │
-│                                                          Embedded SQLite store, in the app's  │
-│                                                          private data directory (OS-sandboxed) │
-│                                                                                                 │
-│  ContentSeeder (first launch / app-update)  ──decodes──►  Bundled JSON/YAML assets              │
-│  IntegrityWorker (WorkManager, periodic)  ──calls──►  IntegrityChecker.verify()                 │
-│                                                                                                  │
-│  (Optional) SyncCoordinator ──uses──► Google Sign-In + Cloud Firestore                          │
-│             (the ONLY network-reachable code path in this entire application)                  │
-│                                                                                                  │
-│  AndroidManifest.xml: every Activity/Service/BroadcastReceiver/ContentProvider is               │
-│  android:exported="false" unless a specific, documented reason requires otherwise (D-02)        │
-└───────────────────────────────────────────────────────────────────────────────────────────────┘
+Browser (vanilla JS SPA-ish frontend, client-side routing via History API)
+   │  fetch() + JWT bearer token (localStorage)
+   ▼
+Nginx (containerized only) ──proxy /api/*──▶ Puma ──▶ Grape API (Ruby)
+                                                          │
+                                                          ▼
+                                                    Sequel ORM
+                                                          │
+                                                          ▼
+                                                    PostgreSQL (`rubyguard` DB)
 ```
 
-**Where the trust boundaries are, restated for a platform with no server process at all:** the same structural point `app11_swift_ios` makes applies here — there is no browser-to-backend HTTP boundary, because the "server" and the "client" are the same sandboxed process. The trust boundaries that *do* exist are: (1) the Android application sandbox boundary (separate Linux UID + SELinux) between this app's process and every other process/app on the device, enforced by the kernel, independent of this app's own code (D-01); (2) the boundary between `ContentSeeder`/`IntegrityChecker` (the only code paths permitted to write seed/verified content) and the `ViewModel`/`Repository` layers that read it, enforced by Kotlin module/visibility structure (D-02); and (3) the boundary around the optional Firestore sync path, the only place this app's data ever leaves the device at all; and (4) a boundary with **no direct equivalent in `app11_swift_ios`**: the boundary around every exported (or, correctly, *non*-exported) Android component, since Android's richer IPC model means "which of my own components can another app on the device reach" is itself a real question this app must answer explicitly, not simply inherit from the platform's defaults the way iOS's more locked-down model allows.
+No message queue, no background job runner, no cache layer — the seeded dataset (20
+threats, ~40 curated cards, 5 mitigations) is small enough that a plain indexed Postgres
+query answers every list/filter/search endpoint well within budget (SR-08-equivalent: p95
+< 200ms for any single endpoint against the seeded dataset). CSV export (§6 Phase 6) is
+generated synchronously in-request for the same reason — no async job/polling endpoint is
+needed at this data volume, a deliberate, stated simplification versus `app09_php_WORDPRESS`'s
+WP-Cron-based async export (that app's larger, WordPress-hosting-constrained environment
+justified async there; this one's data volume does not require it here).
 
 ---
 
-## 4. Architecture Design Decisions
+## 4. Key Design Decisions
 
-### D-01 — Android application sandbox (per-app Linux UID + SELinux): the same category of OS-enforced guarantee as `app11_swift_ios`'s App Sandbox, with a genuinely larger IPC surface to manage
-Every Android app runs under its own Linux user ID, with SELinux mandatory access control further restricting what the process can touch, independent of anything this app's own Kotlin code does correctly or incorrectly — the same *category* of platform-enforced isolation `app11_swift_ios`'s D-01 describes for iOS. This app requests the minimum permission set in `AndroidManifest.xml`: `android.permission.INTERNET` (required only for the optional Firestore sync feature) and nothing else — no storage, camera, location, or contacts permissions. **The honest difference from iOS, stated plainly:** Android additionally exposes a rich inter-process communication surface (Intents, exported Activities/Services/BroadcastReceivers/ContentProviders) that a misconfigured app can accidentally expose to every other app on the device — a historically real vulnerability class with no iOS equivalent of the same shape — which is why D-02 exists as its own, additional design decision rather than being folded into "the sandbox handles it."
-
-### D-02 — Every Android component is `android:exported="false"` by default, with any exception explicitly justified
-```xml
-<activity android:name=".MainActivity" android:exported="true" /> <!-- required: the launcher activity -->
-<activity android:name=".ThreatDetailActivity" android:exported="false" />
-<!-- every other Activity, and every Service/BroadcastReceiver/ContentProvider, is exported="false"
-     unless a specific, code-reviewed reason (documented in a comment above the manifest entry)
-     requires otherwise -->
-```
-Android Lint's `ExportedContentQuery` and related checks (§2) enforce this as a build-blocking SAST rule, not merely a manifest-review convention. This app has exactly one legitimate reason for an exported component (the launcher `MainActivity`, which the OS itself requires to be reachable) — every other component defaults to unexported, closing the specific, historically real Android vulnerability class (an unintentionally exported `ContentProvider` leaking data, or an exported `Activity`/`Service` reachable by a malicious co-installed app) that has no direct analogue in `app11_swift_ios`'s threat model.
-
-### D-03 — `sealed interface` with a `when` expression — an unconditional compile-time guarantee, the same strongest tier as Swift, Rust, and Haskell
-```kotlin
-sealed interface CardKind {
-    data class TechnicalThreat(val severity: Severity) : CardKind
-    data object DesignHarm : CardKind
-}
-
-fun severityOf(kind: CardKind): Severity? = when (kind) {
-    is CardKind.TechnicalThreat -> kind.severity
-    is CardKind.DesignHarm -> null
-    // no `else` branch — when `when` is used as an EXPRESSION over a sealed hierarchy,
-    // Kotlin requires every case to be handled; omitting one is an unconditional COMPILE
-    // ERROR, with no project-configuration flag that disables this check
-}
-```
-Like Swift's `switch` over an `enum` and unlike `app10_csharp_react`'s `CS8509` (a warning promoted to an error by project configuration that could be silently reverted), Kotlin's exhaustiveness check for a `when` **expression** over a `sealed` hierarchy is unconditional — there is no equivalent of removing a configuration line to regain the ability to ship a non-exhaustive branch. (The one caveat worth stating for completeness: using `when` as a *statement* rather than an *expression*, or adding an `else` branch "just in case," would both silently defeat this guarantee — the same category of developer-discipline caveat `app08_cpp_react` states for `std::visit` versus `std::get_if`, and this project's `SEC REVIEW` checklist includes verifying that every `CardKind`-reading `when` is used as an expression with no `else`.)
-
-### D-04 — Room's `@Query`: compile-time-verified SQL, the strongest SQL-safety guarantee of any mobile app in this series
-```kotlin
-@Dao
-interface ThreatDao {
-    @Query("SELECT * FROM threats WHERE severity = :severity AND frameworkCode = :frameworkCode")
-    suspend fun findBySeverityAndFramework(severity: Severity, frameworkCode: String): List<ThreatEntity>
-}
-```
-Room's KSP-based annotation processor parses this SQL string at **build time** and verifies it against the actual `@Entity`-derived schema — a column-name typo or a type mismatch is a **compile error**, not a runtime failure. This is the closest mobile-app analogue in this series to `app05_go_react`'s `sqlc`/`app06_HASKELL_react`'s `hasql-th`/`app07_rust_react`'s `sqlx::query!`, and a stronger, more literal "SQL shape checked at compile time" guarantee than `app11_swift_ios`'s `#Predicate` macro (which type-checks a Swift expression tree against a Swift model, not a SQL string against a schema). There is no code path in this application capable of constructing a query from untrusted string input at all — Room's `@Query` parameters are always bound, never interpolated.
-
-### D-05 — An in-app `LocaleController`, not just system-locale-following localization
-```kotlin
-class LocaleController(private val context: Context) {
-    fun setLocale(locale: AppLocale) {
-        val localeList = LocaleListCompat.forLanguageTags(locale.languageTag)
-        AppCompatDelegate.setApplicationLocales(localeList) // per-app language override, no restart needed
-    }
-}
-```
-`AppCompatDelegate.setApplicationLocales` (backed by Android 13's native per-app language feature, with `AppCompat`'s own backward-compatible implementation for earlier supported API levels) switches the app's effective locale immediately, without a process restart — the Android-idiomatic equivalent of `app11_swift_ios`'s `Bundle`-swizzling `LocalizationManager`, achieved here via a first-class platform API rather than a custom technique, because Android's per-app language support is more directly exposed to app developers than iOS's equivalent.
-
-### D-06 — `kotlinx.serialization` + `kaml`: strict-by-default decoding, the opposite default from `app11_swift_ios`'s `Codable`
-```kotlin
-val json = Json { ignoreUnknownKeys = false } // this IS the default — stated explicitly, never loosened
-val yaml = Yaml(configuration = YamlConfiguration(strictMode = true)) // kaml, layered on kotlinx.serialization
-```
-Unlike Swift's `Codable`, which silently ignores unrecognized keys unless a custom decoder is written, `kotlinx.serialization`'s default configuration **throws `SerializationException` on an unrecognized key** — the same strict-by-default tier as `app10_csharp_react`'s `YamlDotNet`. This project's only obligation is to never set `ignoreUnknownKeys = true`; a `detekt` custom rule flags any occurrence of that flag being set to `true` anywhere in the codebase, the same defensive stance `app10_csharp_react` takes toward `YamlDotNet.IgnoreUnmatchedProperties()`.
-
-### D-07 — Google Sign-In + Cloud Firestore for the one optional feature that needs a network at all
-Bookmark/favorite sync across a user's devices uses the **Credential Manager API's Google Sign-In flow** (no password this app ever sees or stores) and **Cloud Firestore**, with **Firestore Security Rules** scoping every document to `request.auth.uid == resource.data.ownerId` — Google-managed authentication and per-user data isolation, the direct Android analogue of `app11_swift_ios`'s Sign in with Apple + CloudKit decision. This project implements no custom authentication server and no custom sync protocol.
-
-### D-08 — Attack-demo code samples ship read-only, bundled, never executed
-Every code sample (all five languages) is bundled as an Android asset, read-only, rendered as syntax-highlighted text in a Composable. There is no code-execution feature anywhere in this app, and an `AttackDemoWarningDialog` (a Compose `AlertDialog`) gates *viewing/copying* the content, the same UX pattern every sibling uses.
+- **D-01 — Auth:** one hardcoded admin user (`admin`/bcrypt-hashed password from an env
+  var, never committed), JWT HS256 on successful login, `Authorization: Bearer <token>` on
+  every subsequent request. Matches `app01_react`'s actual `JwtService` shape — no OAuth,
+  no user registration, no roles beyond `ADMIN` (Phase-1 parity, not the 19-user-story
+  aspirational RBAC vision `requirements.md` §2 also documents).
+- **D-02 — Grape `params` blocks are this app's compile-time-adjacent guarantee.** Unlike
+  `app05_go_react`'s `sqlc`/`app07_rust_react`'s `sqlx::query!` (genuine compile-time SQL
+  verification) or `app12_kotlin_android`'s Room `@Query` (KSP-verified at build time),
+  Ruby has no compile step at all — Grape's `params` validation is a **runtime** guarantee,
+  checked on every request, not a build-time one. This is stated precisely rather than
+  oversold: Ruby sits at the dynamically-typed end of this series' compile-time-guarantee
+  spectrum, the same tier as `app03_python_django`'s Django REST Framework serializers.
+- **D-03 — `card_kind` (technical-threat-vs-design-harm) has no sum-type enforcement in
+  Ruby the way Swift's `enum`/Kotlin's `sealed interface`/Rust's `enum`/Haskell's ADT give
+  every other sibling.** This app models it as a `card_kind` string column with a
+  **Postgres `CHECK` constraint** (`card_kind IN ('technical_threat', 'design_harm')`)
+  plus an application-level second `CHECK` mirroring `app09_php_WORDPRESS`'s D-04 rule: a
+  `design_harm` row's `severity` column MUST be `NULL` (`(card_kind = 'design_harm' AND
+  severity IS NULL) OR (card_kind = 'technical_threat' AND severity IS NOT NULL)`) —
+  runtime-enforced by the database itself, not the strongest tier in this series (that's
+  Rust/Haskell/Swift/Kotlin's compiler-enforced sum types) but a real, DB-enforced
+  guarantee stronger than "just don't do that in application code."
+- **D-04 — SQL safety is runtime-only, like every dynamically-typed sibling
+  (app03/app09).** Sequel's parameterized dataset API (`where(code: params[:code])`, never
+  string interpolation into raw SQL) is the actual guarantee; RuboCop's
+  `Sequel/*` cops (where available) and Brakeman's SQL-injection checks are the closest
+  static-analysis substitute for what a type system would otherwise catch.
+- **D-05 — i18n is a hand-written client-side store, not a library**, because the surface
+  area (two locales, a few dozen UI strings, plus per-threat `description_pl`/`description_en`
+  content columns) doesn't justify pulling in `i18next` or similar. `LanguageToggle`
+  writes the chosen locale to `localStorage` and re-renders the current view — no page
+  reload, no server round-trip. Threat/card **content** i18n (description text) is a
+  `description_en`/`description_pl` column pair on the relevant tables, with an English
+  fallback when no Polish translation row/value exists yet (FR-18.6-equivalent), the same
+  pattern every sibling uses.
+- **D-06 — every Cornucopia YAML deck is decoded with an explicit allow-listed-keys
+  check**, the same D-06 guarantee every sibling in this series states: Ruby's `Psych`
+  (YAML) and `JSON.parse` are both lenient by default (unknown keys silently ignored, the
+  same end of the spectrum as Swift's `Codable` and PHP's default JSON decoding) — this
+  app's `CardFileLoader` hand-checks `raw.keys - ALLOWED_KEYS` and raises
+  `CardDecodeError::UnrecognizedFields` if non-empty, rather than relying on a strict
+  decoder default the way Kotlin's kotlinx.serialization or C#'s `YamlDotNet`
+  (`app10_csharp_react`) provide "for free."
+- **D-07 — no CSRF token scheme is needed.** This is a stateless JWT-bearer-token API
+  (no cookies, no server-side session) consumed by a same-origin frontend — CSRF is a
+  cookie-based-session attack class this architecture doesn't have the surface for, the
+  same reasoning every JWT-bearer sibling in this series states.
+- **D-08 — the framework-free frontend (§2) is deliberate**, not a shortcut — see the
+  rationale there. `AboutView`'s copy states this explicitly to a curious code reader, the
+  same way `app09_php_WORDPRESS`'s README states its WordPress-vs-SPA choice.
+- **D-09 — code samples are read-only, bundled, never executed** (matches every sibling's
+  attack-demo-gate pattern, §10): an attack-demo sample requires an explicit
+  confirm-to-reveal interaction in the frontend before its code is rendered, the same UX
+  gate `app09`'s `<details>`-based reveal, `app11`'s `.confirmationDialog`, and `app12`'s
+  `AlertDialog` all implement.
 
 ---
 
-## 5. Data Model (Room `@Entity` types)
+## 5. Data Model (PostgreSQL, via Sequel migrations)
 
-### 5.1 Core enums and the `CardKind` type (see D-03 for the full guarantee)
-```kotlin
-enum class Severity { CRITICAL, HIGH, MEDIUM, LOW, INFO }
-enum class StrideCategory { S, T, R, I, D, E }
-enum class SampleType { ATTACK_DEMO, DEFENSE }
-enum class CodeLanguage { PYTHON, JAVA, GO, SCALA, LUA }
-enum class MitigationType { PREVENTIVE, DETECTIVE, CORRECTIVE, COMPENSATING }
-enum class Effort { LOW, MEDIUM, HIGH }
-enum class Effectiveness { PARTIAL, SIGNIFICANT, FULL }
-enum class RelationshipType { EQUIVALENT, RELATED, PARENT_CHILD, MAPS_TO }
-
-sealed interface CardKind {
-    data class TechnicalThreat(val severity: Severity) : CardKind
-    data object DesignHarm : CardKind
-}
+```
+frameworks         (code PK, name, version, description, reference_url)
+threats            (code PK, framework_code FK, title, severity, category,
+                     description_en, description_pl, attack_vector, attack_surface,
+                     stride text[], tags text[])
+cards              (card_id PK, suit_code, suit_name, edition, value, card_kind,
+                     severity NULL-able (CHECK, D-03), description_en, description_pl,
+                     misc_note NULL-able, source_url NULL-able,
+                     owasp_refs text[], mitre_refs text[], content_sha256, is_critical bool)
+mitigations        (slug PK, threat_code FK NULL-able, card_id FK NULL-able, title,
+                     description, mitigation_type, effort, effectiveness)
+code_samples       (id PK serial, mitigation_slug FK, language, sample_type, title,
+                     description, code text, framework_hint, version_note)
+cross_references   (id PK serial, source_threat_code FK, target_threat_code,
+                     target_threat_title, relationship_type, description)
+content_hashes     (file_name PK, sha256_hash, verified_at, is_valid, verified_by)
+users              (id PK, username unique, password_digest, role) — exactly one seeded row
 ```
 
-### 5.2 Framework
-```kotlin
-@Entity(tableName = "frameworks")
-data class FrameworkEntity(
-    @PrimaryKey val code: String,          // "OWASP_WEB", "OWASP_LLM", "MITRE_ATLAS", ...
-    val name: String,
-    val version: String,
-    val description: String,
-    val referenceUrl: String
-)
+`CHECK` constraints (D-03) and foreign keys are added via explicit `alter_table` migration
+steps, mirroring `app09_php_WORDPRESS`'s reasoning: Sequel's plain-Ruby migration DSL
+handles `CHECK`/`FOREIGN KEY` natively and correctly (unlike WordPress's `dbDelta()`), so
+this is simpler here than it was for app09 — no separate parser-limitation workaround
+needed, just ordinary Sequel migration syntax.
+
+---
+
+## 6. Phased Build Plan
+
+1. **Foundation** — Gemfile, Grape/Puma/Sequel wiring, Postgres migrations, JWT auth
+   (`POST /api/v1/auth/login`), `frameworks`/`threats` endpoints, seed loader for
+   `frameworks.json`/`threats_seed.json`.
+2. **Card ingestion** — `CardFileLoader` (YAML decode + allow-listed-keys check, D-06),
+   curation JSON merge (severity/refs), `ReferenceValidator` (OWASP/MITRE allowlist check),
+   SHA-256 integrity check against `hashes.json`, seed all 6 decks.
+3. **Mitigations + code samples** — 5 real mitigations, each with a real attack-demo +
+   defense sample in all 5 languages (content reused verbatim from `app09`/`app11`/`app12`
+   — language-agnostic educational content, not re-authored).
+4. **i18n** — `description_en`/`description_pl` columns populated, `LanguageToggle` +
+   `i18n.js` store, Polish default.
+5. **Search/export/matrix** — Postgres `ILIKE`-based search (no full-text index yet, same
+   honest-scope-gap pattern as every sibling's plain-CONTAINS search), synchronous CSV
+   export, LLM↔MITRE-ATLAS matrix endpoint, STRIDE heatmap endpoint.
+6. **Hardening/testing** — Brakeman, `bundler-audit`, RuboCop, full RSpec suite (unit +
+   request specs), `rantly` property tests, Playwright E2E suite.
+
+---
+
+## 7. API Contract (matches `../CLAUDE.md`'s canonical Phase-1 contract)
+
+```
+POST /api/v1/auth/login        {username, password} -> {token, tokenType:"Bearer", role:"ADMIN"} | 401
+GET  /api/v1/frameworks        -> Framework[]
+GET  /api/v1/frameworks/:code  -> Framework | 404
+GET  /api/v1/threats           ?frameworkCode&severity&stride&tag&q&page&size&sort -> Page<ThreatSummary>
+GET  /api/v1/threats/:id       -> ThreatDetail | 404
+GET  /health                   -> {"status":"UP"}
 ```
 
-### 5.3 Threat
-```kotlin
-@Entity(tableName = "threats")
-data class ThreatEntity(
-    @PrimaryKey val code: String,          // "LLM01:2025", "A03:2021", "AML.T0051"
-    val frameworkCode: String,
-    val title: String,
-    val severity: Severity,
-    val category: String,
-    val descriptionEn: String,
-    val descriptionPl: String,              // content i18n lives on the entity directly, the
-                                              // same single-device-store simplification app11
-                                              // makes versus a separate translation table
-    val attackVector: String,
-    val attackSurface: String,
-    val stride: List<StrideCategory>,       // Room TypeConverter for the list
-    val tags: List<String>
-)
-```
+`Page<T> = {content, totalElements, totalPages, number, size}` — mirrors Spring Data's
+envelope shape exactly, computed by hand in this Grape API (Ruby has no equivalent
+framework-native paging envelope the way Spring Data provides one), so the response body
+shape matches `app01_react` even though nothing generates it automatically here. Error
+body on 4xx: `{timestamp, status, error, message}`, also hand-built to match.
 
-### 5.4 CornucopiaCard *(all six YAML decks — see D-03 for `CardKind`)*
-```kotlin
-@Entity(tableName = "cards")
-data class CornucopiaCardEntity(
-    @PrimaryKey val cardId: String,        // "VE3", "LLM4", "SCO2"
-    val suitCode: String,
-    val suitName: String,
-    val edition: String,                    // webapp, mobileapp, companion, eop, mlsec, dbd
-    val value: String,                       // "2".."10","J","Q","K","A"
-    val kind: CardKind,                       // D-03: TechnicalThreat(severity) | DesignHarm
-    val descriptionEn: String,
-    val descriptionPl: String,
-    val miscNote: String?,
-    val sourceUrl: String?,
-    val owaspRefs: List<String>,
-    val mitreRefs: List<String>,
-    val contentSha256: String
-)
-```
+**One intentional addition beyond the shared contract, not a deviation from it:**
+`GET /api/v1/cards`, `GET /api/v1/cards/:cardId`, `GET /api/v1/mitigations/:threatCode`,
+`GET /api/v1/matrix/llm`, `GET /api/v1/matrix/stride-heatmap`, `GET /api/v1/search?q=`,
+`GET /api/v1/export.csv` — these exist because the shared Phase-1 contract only covers
+`app01_react`'s original threat/framework scope, and every sibling that also carries the
+Cornucopia-card/mitigation/matrix content (app03, app09, app11, app12, and now this one)
+adds its own equivalent routes for that content, none of which app01 has reason to define.
 
-### 5.5 Mitigation
-```kotlin
-@Entity(
-    tableName = "mitigations",
-    foreignKeys = [
-        ForeignKey(entity = ThreatEntity::class, parentColumns = ["code"], childColumns = ["threatCode"]),
-        ForeignKey(entity = CornucopiaCardEntity::class, parentColumns = ["cardId"], childColumns = ["cardId"])
-    ]
-)
-data class MitigationEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val threatCode: String?,
-    val cardId: String?,
-    val title: String,
-    val description: String,
-    val mitigationType: MitigationType,
-    val effort: Effort,
-    val effectiveness: Effectiveness
-    // non-emptiness of associated CodeSamples verified by a Kotest property over seed data,
-    // not the type itself — the same accepted gap every sibling without a dedicated
-    // NonEmpty-collection type states
-)
-```
+---
 
-### 5.6 CodeSample
-```kotlin
-@Entity(tableName = "code_samples")
-data class CodeSampleEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val mitigationId: Long,
-    val language: CodeLanguage,
-    val sampleType: SampleType,
-    val title: String,
-    val description: String,
-    val code: String,
-    val frameworkHint: String,   // "Room @Query", "Spring Boot 3.3", "Django ORM"...
-    val versionNote: String
-)
-```
+## 8. Frontend Views
 
-### 5.7 CrossReference
-```kotlin
-@Entity(tableName = "cross_references")
-data class CrossReferenceEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val sourceThreatCode: String,
-    val targetThreatCode: String,
-    val relationshipType: RelationshipType,
-    val description: String
-)
 ```
-
-### 5.8 ContentHash
-```kotlin
-@Entity(tableName = "content_hashes")
-data class ContentHashEntity(
-    @PrimaryKey val fileName: String,
-    val sha256Hash: String,
-    val verifiedAt: Long,   // epoch millis
-    val isValid: Boolean,
-    val verifiedBy: String = "kotlinguard-integrity-checker"
-)
-```
-
-### 5.9 Bookmark *(the only user-generated, sync-eligible data)*
-```kotlin
-@Entity(tableName = "bookmarks")
-data class BookmarkEntity(
-    @PrimaryKey val threatOrCardCode: String,
-    val createdAt: Long,
-    val firestoreDocId: String?   // set only if Firestore sync (D-07) is enabled
-)
+IndexView          → framework tiles (US-01)
+ThreatBrowserView   → filterable list (US-02)
+ThreatDetailView    → overview / attack vectors / mitigations / code samples / cross-refs (US-03)
+CardSuitView        → generic, parameterized by suit or edition (US-05–US-12)
+DigitalHarmsView    → dedicated — must never render a severity badge (US-19, D-03)
+MatrixView          → LLM↔MITRE-ATLAS, STRIDE heatmap (US-04, US-08)
+SearchView          → free-text search across threats + cards (US-17)
+LoginView           → the one hardcoded admin account
+AboutView           → states the framework-free-frontend decision (D-08) explicitly
 ```
 
 ---
 
-## 6. Development Phases
-
-*(Numbering aligned with the Agile/Scrum sprint plan in `SDLC_analysis.md`, §4.)*
-
-### Phase 1 — Foundation (Sprints 1–2)
-Covers: US-01, US-02
-- [ ] Gradle multi-module project: `:data` (Room, `ContentSeeder`, `IntegrityChecker`, Repositories), `:ui` (Compose, ViewModels), `:app` (thin composition root, `MainActivity`)
-- [ ] `AndroidManifest.xml` with every component `android:exported="false"` except the launcher `MainActivity` (D-02)
-- [ ] Room database schema for entities in §5.1–5.9; KSP annotation processing wired into Gradle
-- [ ] `ContentSeeder` — decodes bundled JSON assets for OWASP Web/LLM/Agentic/API, MITRE ATLAS, CompTIA SecAI+ into Room on first launch
-- [ ] `FrameworkListScreen` (Compose) + `FrameworkListViewModel` — the home screen
-- [ ] `LocaleController` (D-05) + resource-qualifier scaffolding for `values`/`values-pl`
-- [ ] Android Lint + `detekt` wired into CI (not yet blocking)
-
-**Security checkpoint:** `AndroidManifest.xml` review confirms only the launcher `Activity` is exported; Android Lint's `ExportedContentQuery` check passes with zero findings; `INTERNET` permission is the only one declared.
-
-### Phase 2 — Core Threat Browser (Sprints 3–4)
-Covers: US-02, US-03, US-04
-- [ ] Room `@Query`-based filtering: framework, severity, stride, category, tag, q (D-04)
-- [ ] `ThreatDetailScreen` — sections: Overview | Attack Vectors | Mitigations | Code | Cross-References
-- [ ] `ThreatBrowserViewModel` with a debounced `StateFlow<String>` search query
-- [ ] `MatrixScreen` — cross-framework mapping table
-
-**Security checkpoint:** Room compiler build output confirmed to contain zero `@Query` compilation warnings; code review confirms no `SupportSQLiteDatabase.rawQuery` with string-concatenated input exists anywhere (the one way Room's own guarantee could be bypassed).
-
-### Phase 3 — Card Decks & Content Integrity (Sprints 5–7)
-Covers: US-05–US-12, US-19
-- [ ] `kotlinx.serialization`/`kaml`-based decoders (D-06) for **all six** `docs/OWASP_stories/*.yaml` files, bundled as Android assets
-- [ ] `IntegrityChecker.verify()` — SHA-256 vs bundled `hashes.json`; called only from `ContentSeeder` and `IntegrityWorker` (D-02-style module isolation, enforced by Gradle module boundaries — `:ui` does not depend on `IntegrityChecker`'s internal module)
-- [ ] Card suit browser screens: FRE, LLM, AAI, CLD (Companion), SP/TA/RE/ID/DS/EP (STRIDE), EMR/EIR/EOR/EDR (MLSec), PC/AA/NS/RS/CRM/CM (Mobile — **this app's own threat-model source**, §11), VE/AT/SM/AZ/CR/C (Website App), **SCO/ARC/AGE/TRU/POR (Digital-by-Default Harms, US-19 — in scope here, not bolted on later)**
-- [ ] `AttackDemoWarningDialog` (Compose `AlertDialog`) before revealing `ATTACK_DEMO` code samples
-
-**Security checkpoint:** malformed/unknown-field YAML throws `SerializationException` by default (a `Kotest` property generates random extra keys and asserts the throw); content hash mismatch aborts seeding and surfaces a user-visible "content integrity error" state.
-
-### Phase 4 — Code Samples: 5 Languages (Sprints 7–9)
-Covers: US-13–US-16
-- [ ] Code sample seed data for every mitigation × 5 languages (Python, Java, Go, Scala, Lua)
-- [ ] `CodeSamplePanel` Composable — per-language tabs, Attack Demo / Defense sub-tabs, syntax highlighting
-- [ ] MITRE ATLAS Kill-Chain timeline (native Compose `Canvas`, no third-party charting library)
-
-### Phase 5 — i18n Polish ↔ English (Sprint 9–10)
-Covers: US-11 (folded into every story's acceptance criteria, see §15 note)
-- [ ] Full `strings.xml`/`values-pl/strings.xml` coverage for every UI string
-- [ ] `LocaleToggle` Composable driving `LocaleController` (D-05)
-- [ ] Card/threat content's `descriptionPl`/`descriptionEn` fields switched by the same locale state
-- [ ] Code samples **never** translated
-- [ ] CI check: a script diffing string resource keys used in Composables against keys present in both `strings.xml` files fails the build on any mismatch
-
-### Phase 6 — Search, Export, Matrix Completion, Optional Sync (Sprints 10–12)
-Covers: US-17, US-18
-- [ ] Room `@Query`-based search (`LIKE`-based, with an FTS4/FTS5 virtual table considered if relevance needs improve beyond simple matching)
-- [ ] `Intent.ACTION_SEND`-based CSV/PDF export via `FileProvider`, generated synchronously on-device
-- [ ] `MatrixLlmScreen`, `MatrixAgenticScreen`, `MatrixMobileVsWebScreen`, `StrideHeatmapScreen`, `MatrixDigitalHarmsScreen`
-- [ ] (Optional feature) Google Sign-In + Cloud Firestore sync for `Bookmark` (D-07) — the `INTERNET` permission and Firestore Security Rules are finalized at this point
-
-### Phase 7 — Hardening, Testing & Release (Sprints 12–14)
-Covers: full regression across US-01–US-19
-- [ ] `JUnit 5` + `Kotest` properties, coverage ≥ 85% on `:data`
-- [ ] Compose UI Testing suite (`createAndroidComposeRule`) — one scenario per user story
-- [ ] Android Lint + `detekt` in CI, zero HIGH findings
-- [ ] `dependency-check-gradle` (OWASP Dependency-Check) in CI, zero HIGH/CRITICAL
-- [ ] R8 shrinking/obfuscation confirmed active and non-breaking in the release build variant
-- [ ] Manual `AndroidManifest.xml` review confirming no unintended exported component
-- [ ] Internal testing track → closed testing → Google Play production release
-
----
-
-## 7. Repository / Data-Access Layer Map
-
-*(This section replaces every sibling's "API Endpoint Map" — there is no HTTP surface in this application at all, the same structural point `app11_swift_ios` makes.)*
-
-```kotlin
-interface FrameworkRepository {
-    suspend fun list(): List<Framework>
-    suspend fun detail(code: String): Framework?
-}
-
-interface ThreatRepository {
-    suspend fun list(filter: ThreatFilter): List<Threat>
-    suspend fun detail(code: String): Threat?
-    suspend fun crossReferences(sourceCode: String): List<CrossReference>
-}
-
-interface CardRepository {
-    suspend fun bySuit(suitCode: String): List<CornucopiaCard>
-    suspend fun byCardId(cardId: String): CornucopiaCard?
-    suspend fun suits(edition: String): List<String>
-    // Digital-by-Default Harms (US-19): callers use `card.kind` via the exhaustive `when` in
-    // D-03 — there is no separate "severity" accessor that could accidentally be called on a
-    // design-harm card, because Severity is only reachable through that `when` at all.
-}
-
-interface MatrixRepository {
-    suspend fun llmMatrix(): Matrix
-    suspend fun agenticMatrix(): Matrix
-    suspend fun mobileVsWebMatrix(): Matrix
-    suspend fun strideHeatmap(): StrideHeatmap
-}
-
-interface SearchRepository {
-    suspend fun query(text: String, locale: AppLocale): List<SearchResult>
-}
-
-interface ExportService {
-    suspend fun exportCsv(filter: ThreatFilter): Uri   // synchronous, on-device, shared via FileProvider
-    suspend fun exportPdf(threatCode: String): Uri
-}
-
-interface BookmarkRepository {
-    suspend fun add(code: String)
-    suspend fun remove(code: String)
-    suspend fun list(): List<Bookmark>
-    // (Optional) sync via SyncCoordinator, which is the ONLY type in this app that imports
-    // the Firestore/Google Sign-In SDKs
-}
-```
-
-There is no `CornucopiaCard` write method anywhere in this interface surface, and no implementation exists in `:data` either (the C-08-equivalent constraint every sibling since `app05_go_react` states) — cards are written only by `ContentSeeder` and the periodic re-seed path.
-
----
-
-## 8. Jetpack Compose Screen & Feature Structure
+## 9. Repository/Directory Layout
 
 ```
-Screens (:ui):
-  RootScreen                       → NavigationBar: Frameworks | Threats | Search | Bookmarks | About
-  FrameworkListScreen / FrameworkDetailScreen
-  ThreatBrowserScreen / ThreatDetailScreen (sections: Overview | Attack Vectors | Mitigations | Code | Cross-Refs)
-  CardSuitScreen(edition:)          → generic, parameterized by edition/suit — used for:
-    - Website App suits (US-12)        - FRE (US-05)
-    - LLM (US-06) + LlmMatrixScreen     - AAI + CLD (US-07)
-    - STRIDE catalogue (US-08) + StrideHeatmapScreen
-    - MLSec (US-09)                     - Mobile (US-10) + MobileVsWebMatrixScreen
-    - DevOps: DVO + BOT (US-11)
-  DigitalHarmsScreen (US-19)         → DesignHarmBadge (its Kotlin type has no severity branch to read)
-  CodeSamplePanel                     → per-language tabs, AttackDemoWarningDialog
-  SearchResultsScreen
-  LocaleToggle (D-05)
-  BotWarningDialog (US-11)
-  AboutScreen
-```
-
----
-
-## 9. Gradle Module / Project Layout
-
-```
-app12_kotlin_android/
-├── settings.gradle.kts
-├── build.gradle.kts
-├── data/                                  ← Gradle module
-│   ├── build.gradle.kts                   ← KSP, Room, kotlinx.serialization, kaml
-│   └── src/main/kotlin/.../data/
-│       ├── model/
-│       │   ├── Enums.kt                   ← Section 5 enums
-│       │   └── CardKind.kt                ← D-03
-│       ├── seeding/
-│       │   └── ContentSeeder.kt
-│       ├── cards/
-│       │   └── CardFileDecoders.kt        ← D-06, one decoder per YAML shape
-│       ├── integrity/
-│       │   └── IntegrityChecker.kt        ← module-internal, isolated per D-02-style boundary
-│       ├── sync/
-│       │   └── SyncCoordinator.kt         ← the only file importing Firestore/Google Sign-In (D-07)
-│       ├── db/                             ← Room @Dao interfaces, @Database class
-│       └── repository/                      ← §7 interface implementations
-├── ui/                                      ← Gradle module, depends on :data's public API only
-│   └── src/main/kotlin/.../ui/
-│       ├── screens/                          ← §8
-│       ├── viewmodel/                          ← ViewModel + StateFlow classes
-│       └── locale/
-│           └── LocaleController.kt             ← D-05
-├── app/                                      ← the actual application module, thin composition root
-│   ├── build.gradle.kts
-│   ├── src/main/
-│   │   ├── AndroidManifest.xml                ← D-02: every component exported="false" except launcher
-│   │   ├── kotlin/.../MainActivity.kt
-│   │   └── assets/
-│   │       ├── owasp_web_top10.json
-│   │       ├── owasp_llm_top10.json
-│   │       ├── owasp_agentic_top10.json
-│   │       ├── mitre_atlas.json
-│   │       ├── comptia_secai.json
-│   │       ├── cornucopia/
-│   │       │   ├── webapp-cards-3.0-en.yaml
-│   │       │   ├── companion-llm-cards-1.0-en.yaml
-│   │       │   ├── mobileapp-cards-1.1-en.yaml
-│   │       │   ├── stride-eop-cards-5.0-en.yaml
-│   │       │   ├── mlsec-cards-1.0-en.yaml
-│   │       │   ├── dbd-cards-1.0-en.yaml      ← Digital-by-Default Harms (US-19)
-│   │       │   └── translations/pl.cards.json
-│   │       ├── hashes.json
-│   │       ├── mitre-atlas-allowlist.json
-│   │       ├── ref-allowlists.json
-│   │       └── code_samples/{python,java,go,scala,lua}/
-│   └── src/main/res/values/strings.xml, values-pl/strings.xml   ← PL/EN string resources
-├── data/src/test/                              ← JUnit 5 + Kotest (unit/property, on :data)
-└── app/src/androidTest/                         ← Compose UI Testing, one file per user story (us01..us19)
+app13_ruby_FastApi/
+├── backend/
+│   ├── Gemfile / Gemfile.lock
+│   ├── config.ru                       ← Rack entry point
+│   ├── app/
+│   │   ├── api/                        ← Grape::API classes, one per resource
+│   │   ├── entities/                   ← Grape::Entity response shapers
+│   │   ├── models/                     ← Sequel::Model classes
+│   │   ├── services/                   ← CardFileLoader, ReferenceValidator, ContentSeeder, IntegrityChecker
+│   │   └── middleware/                 ← JWT auth middleware, rack-attack config
+│   ├── db/
+│   │   ├── migrations/
+│   │   └── seeds/                      ← frameworks.json, threats_seed.json, cornucopia/*.yaml, code_samples/{python,java,go,scala,lua}/
+│   └── spec/                           ← RSpec unit + request specs, rantly properties
+├── frontend/
+│   ├── src/
+│   │   ├── views/
+│   │   ├── i18n.js
+│   │   ├── api-client.js
+│   │   └── main.js
+│   ├── index.html
+│   └── e2e/                            ← Playwright specs
+├── docker-compose.yml
+├── PLAN.md / requirements.md / SDLC_analysis.md / user_stories+tests.md / CLAUDE.md
 ```
 
 ---
 
 ## 10. Code Sample Strategy
 
-Every `Mitigation` ships exactly **five** `CodeSample` entities. As in every sibling since `app07_rust_react`, completeness is verified by a `Kotest` property over the seeded dataset, not a type-level guarantee.
-
-| Language | Primary framework/library used in samples |
-|---|---|
-| Python | Django ORM / FastAPI + Pydantic |
-| Java | Spring Boot 3.3, Spring Security 6, Spring Data JPA |
-| Go | `chi` + `sqlc` + `pgx` |
-| Scala | Akka HTTP / http4s, Slick 3.x, ZIO 2 |
-| Lua | OpenResty / NGINX Lua, `lua-resty-jwt`, LuaSQL |
-
-```
-sampleType: ATTACK_DEMO   // VULNERABLE — do not use in production
-sampleType: DEFENSE       // SECURE pattern, with a one-line WHY comment
-```
-
-**A note on Java as a sample language versus this app's own Kotlin:** Kotlin and Java share the JVM/ART runtime, which makes the Java code-sample tab an unusually direct, line-by-line comparison point for this app's own idioms (Room's `@Query` versus Spring Data JPA's `@Query`, both compile-time-checked in their own way) — the Code Samples tab, for the relevant threats, cross-links to this app's own source as an implicit sixth example without adding Kotlin as a seventh formal sample language (the brief specifies five: Python, Java, Go, Scala, Lua).
+Every `Mitigation` ships exactly **five** `CodeSample` records (one attack-demo + one
+defense per language would be ten total per mitigation; PLAN.md's own scope is 5
+mitigations × 5 languages × 2 sample types = 50 samples total, verbatim-reused content
+from `app09`/`app11`/`app12`). Completeness (every mitigation has all 5 languages, both
+sample types) is verified by an `rantly`-based property test over the seeded dataset, not
+a type-level guarantee — Ruby has no `NonEmpty`/exhaustive-coverage collection type.
 
 ---
 
-## 11. Security Data Coverage Plan
+## 11. Threat Model Summary
 
-| Framework | Coverage target | Source |
-|---|---|---|
-| OWASP Web Top 10 (2021) | A01–A10, all 10 | seeded JSON, cross-refs to `VE/AT/SM/AZ/CR/C` cards |
-| OWASP LLM Top 10 (2025) | LLM01–LLM10, all 10 | seeded JSON + `LLM` suit (Companion) |
-| OWASP Agentic AI Top 10 (2026) | AgentAI01–10 | seeded JSON + `AAI` suit (Companion) |
-| OWASP API Security Top 10 | API1–API10 | seeded JSON |
-| OWASP Client-Side Top 10 | C01–C10 | `FRE` suit (Companion) |
-| OWASP CI/CD Security Top 10 | CICD-SEC-01–10 | `DVO` suit (Companion) |
-| OWASP Automated Threats (OAT) | ≥ 13 of 21 | `BOT` suit (Companion) |
-| Cloud misconfiguration (A05/A01:2021) | — | `CLD` suit (Companion) |
-| **OWASP MASVS 2.0 — this app's own primary threat model, not just browsable content** | all 7 categories | `PC/AA/NS/RS/CRM/CM` suits (Mobile) — cross-referenced directly against KotlinGuard's own Android Sandbox (D-01), exported-component discipline (D-02), and Firestore sync (D-07) design decisions in `SDLC_analysis.md` Phase 0/2 |
-| STRIDE | S,T,R,I,D,E — all 6 | `SP/TA/RE/ID/DS/EP` suits (EoP v5.0) |
-| Elevation of MLSec | Model/Input/Output/Dataset Risk | `EMR/EIR/EOR/EDR` suits |
-| MITRE ATLAS | ≥ 15 techniques across ≥ 5 tactics | seeded JSON, cross-referenced from LLM/AAI/mlsec cards |
-| CompTIA Security+ / SecAI+ | ≥ 20 topics, including Android-specific mobile-security topics (exported components, `network_security_config`, Keystore) | seeded JSON, from `docs/Security Architects...md` mapping table |
-| OWASP A04:2021 Insecure Design — Digital-by-Default Harms | Scope/Architecture/Agency/Trust/Porosity | `SCO/ARC/AGE/TRU/POR` suits (US-19) — **not** a technical-vulnerability deck, see D-03 |
+This app's own attack surface: a public read-heavy REST API plus one authenticated
+admin-only write surface (not yet built beyond login, Phase-1 parity). Primary risks:
+SQL injection (mitigated by D-04, Sequel's parameterized API), brute-force login
+(mitigated by `rack-attack`), JWT secret leakage (env-var only, never committed, rotated
+independently per environment), and dependency vulnerabilities (mitigated by
+`bundler-audit` in CI). No file upload surface exists in Phase-1 scope, eliminating an
+entire attack class other siblings' export/import features must consider.
 
 ---
 
-## 12. Cornucopia Content Pipeline
+## 12. CI/CD Pipeline
 
-```
-app/src/main/assets/cornucopia/
-├── webapp-cards-3.0-en.yaml
-├── companion-llm-cards-1.0-en.yaml
-├── mobileapp-cards-1.1-en.yaml
-├── stride-eop-cards-5.0-en.yaml
-├── mlsec-cards-1.0-en.yaml
-├── dbd-cards-1.0-en.yaml            ← Digital-by-Default Harms (US-19)
-└── translations/pl.cards.json
-
-app/src/main/assets/hashes.json       ← SHA-256 per YAML file
-app/src/main/assets/mitre-atlas-allowlist.json
-app/src/main/assets/ref-allowlists.json
-```
-
-**Workflow:**
-1. PR touching `assets/cornucopia/*.yaml` → CODEOWNERS `@security-team`, min. 2 approvals.
-2. CI job `yaml-content-integrity`: `kaml`'s strict decoding (D-06) must succeed against every file (any unrecognized shape throws `SerializationException`) + injection-pattern grep + ref-allowlist validation.
-3. Post-merge: a `hash-generator` CI step updates `assets/hashes.json`.
-4. `ContentSeeder` and `IntegrityWorker` both call `IntegrityChecker.verify()` on app launch/periodic refresh — the same reframing `app11_swift_ios`'s §12 describes applies here: because the APK/AAB is signed and the sandbox prevents another app from modifying this app's assets post-install, this check's primary value is catching a bad build/CI mistake and detecting on-device Room-database corruption, not defending against a runtime attacker modifying files on a mutable server filesystem.
+GitHub Actions: `bundle exec rspec` → `brakeman` → `bundler-audit check` → `rubocop` →
+Playwright E2E (against a docker-compose-launched stack) → build frontend `dist/` via
+`esbuild` → (manual approval gate) → staging → production, the same staged rollout shape
+`SDLC_analysis.md` §5 describes in full.
 
 ---
 
@@ -603,73 +399,7 @@ app/src/main/assets/ref-allowlists.json
 
 | Risk | Mitigation |
 |---|---|
-| An Activity/Service/BroadcastReceiver/ContentProvider accidentally left exported | Android Lint's `ExportedContentQuery` (build-blocking) + manual `AndroidManifest.xml` review before every release (D-02) — **this app's single largest Android-specific risk with no direct `app11_swift_ios` equivalent** |
-| `kotlinx.serialization`'s `ignoreUnknownKeys` flipped to `true` by a future contributor "to fix a crash" | `detekt` custom rule flagging any occurrence of `ignoreUnknownKeys = true`; `Kotest` property test regression coverage |
-| Digital-by-Default Harms deck misread as CVE severity | `CardKind` sealed interface with a `when` expression (D-03) — the strongest, unconditional guarantee in this series, tied with Swift/Rust/Haskell, *provided* every read site uses `when` as an expression with no `else` |
-| `IntegrityChecker` called from an unintended module | Gradle module boundary (`:ui` does not depend on `:data`'s internal integrity package) + `detekt` custom rule |
-| A future `SupportSQLiteDatabase.rawQuery` call reintroduces string-built SQL, bypassing Room's `@Query` guarantee | Code review + a `detekt`/Android Lint custom rule forbidding `rawQuery` outside a documented, reviewed exception |
-| Firestore sync token exposure | Stored in `EncryptedSharedPreferences` (Keystore-backed), never in plain `SharedPreferences` or the Room database |
-| R8 obfuscation breaking a reflection-dependent library at runtime, discovered only in a release build | R8/ProGuard rules tested against a release build variant in CI, not only debug builds |
-| Attack-demo code confused with production-safe code | Red-styled badge + `AlertDialog` confirmation before code is shown/copied |
-| Bundled asset JSON/YAML tampered in a PR | CODEOWNERS review + `IntegrityChecker.verify()` SHA-256 check |
-
----
-
-## 14. Directory Layout
-
-```
-app12_kotlin_android/
-├── PLAN.md
-├── requirements.md
-├── user_stories+tests.md
-├── SDLC_analysis.md
-│
-└── (Gradle/Android Studio project — see §9 for full internal layout)
-```
-
----
-
-## 15. User Stories — Complete List
-
-*(Full acceptance criteria and TDD test plans in `user_stories+tests.md`. All six YAML decks — including Digital-by-Default Harms — are covered from the start of this plan.)*
-
-| ID | Role | Need | Goal |
-|---|---|---|---|
-| US-01 | security engineer | browse security framework catalogue | single access point to all standards |
-| US-02 | security engineer | filter threats by framework, severity, STRIDE, tag, q | quickly find threats relevant to my project |
-| US-03 | security engineer | see threat details with mitigations and code samples | understand how to implement protection |
-| US-04 | CompTIA SecAI+ student | see how LLM01 Prompt Injection maps to MITRE ATLAS AML.T0051 | understand cross-framework dependencies |
-| US-05 | mobile/frontend developer | browse Cornucopia FRE cards (Companion) | map client-side attack scenarios to mitigations |
-| US-06 | ML engineer / AI architect | explore OWASP LLM Top 10 via Cornucopia LLM cards with interactive matrix | understand prompt injection, poisoning, excessive agency |
-| US-07 | agentic AI / cloud developer | study AAI + CLD cards | design human-in-the-loop safeguards; spot IAM/storage misconfiguration |
-| US-08 | security architect / threat modeler | use STRIDE EoP catalogue with interactive heatmap | run structured threat modeling session |
-| US-09 | data scientist / ML security engineer | browse MLSec cards (EMR/EIR/EOR/EDR) with MITRE ATLAS refs | identify adversarial ML, model theft, data poisoning |
-| US-10 | Android/iOS developer | see OWASP MASVS threats via Mobile App cards, cross-referenced to this very app's own design decisions | understand mobile vs. web security differences using a live, in-app example |
-| US-11 | DevSecOps engineer | browse DVO/CLD/BOT cards | protect CI/CD pipelines, spot cloud misconfig, defend against bots |
-| US-12 | backend developer | browse Website App Cornucopia cards (VE/AT/SM/AZ/CR/C) | map classic OWASP Web Top 10 attack scenarios to mitigations |
-| US-13 | Python developer | see a Python code sample for each mitigation | copy a secure implementation pattern |
-| US-14 | Java developer | see a Java code sample for each mitigation | compare against this app's own Kotlin/Room idioms |
-| US-15 | Scala developer | find Scala code samples for supply-chain attacks | implement SCA in a Scala pipeline |
-| US-16 | Lua/OpenResty developer | see Lua examples for rate limiting preventing LLM DoS | configure NGINX guardrails for an LLM API proxy |
-| US-17 | pentester | search a term and find related threats with defenses | assemble a client test checklist |
-| US-18 | team lead | export the filtered threat list to CSV/PDF via the native Android share sheet | include it in a risk register |
-| US-19 | public-sector product owner / GRC reviewer | browse the "Digital-by-Default Harms" deck (SCO/ARC/AGE/TRU/POR), clearly separated from technical decks | assess digital-exclusion and opaque-design risk, map to A04:2021 |
-
-*(The Polish↔English language switch is folded into every story's acceptance criteria per FR-18 in `requirements.md` rather than numbered separately here.)*
-
----
-
-## 16. Milestones & Acceptance Criteria
-
-| Milestone | Deliverable | Done when |
-|---|---|---|
-| M1 | Working skeleton | App launches in the Emulator; home screen shows framework tiles from bundled seed data |
-| M2 | Full data seed | All frameworks + threats + mitigations present in the Room database; counts match expected totals |
-| M3 | All six card decks ingested | `IntegrityChecker` reports `isValid = true` for all six YAML files, including `dbd-cards-1.0-en.yaml` |
-| M4 | Code samples complete | Every mitigation has 5 language samples visible on Threat Detail |
-| M5 | Matrix + heatmap | Cross-reference table renders; STRIDE heatmap shows coverage % |
-| M6 | i18n complete | In-app PL/EN toggle works everywhere, no restart required; string-resource key-parity check passes in CI |
-| M7 | Search + export work | On-device search returns results; CSV/PDF export completes via the native Android share sheet |
-| M8 | Digital-by-Default Harms | `DigitalHarmsScreen` renders all 5 suits with a design-harm badge; A04:2021 cross-reference visible; every `CardKind` `when` confirmed exhaustive by the compiler (no `else` branch present anywhere it reads `CardKind`) |
-| M9 | Security hardening | Android Lint/`detekt`/`dependency-check-gradle` zero HIGH; `AndroidManifest.xml` reviewed and contains only the launcher-activity export plus the `INTERNET` permission; R8 release build verified functional |
-| M10 | Tests green | ≥ 90% of TDD test list in `user_stories+tests.md` passing in CI; internal testing track build distributed |
+| Ruby's dynamic typing means a typo'd column name fails at request time, not build time | RSpec request-spec coverage on every endpoint; Sequel raises a clear `Sequel::DatabaseError` rather than silently returning wrong data |
+| Puma's synchronous worker model could bottleneck under genuinely async-shaped load (many slow concurrent I/O-bound requests) | Not a real risk at this app's seeded data volume/expected traffic (a course reference app, not a production service) — stated here so it isn't silently assumed to not exist |
+| `grape-swagger`'s generated OpenAPI doc could drift from actual behavior if a `params` block is bypassed | Brakeman + RSpec request specs catch behavioral drift; `params` blocks are the only validation path used anywhere in this codebase, by convention enforced in code review |
+| Framework-free frontend risks becoming an unmaintainable pile of DOM manipulation as views grow | Views are single-responsibility ES modules with one `render(state)` function each — a deliberately small, consistent internal convention, not "no structure at all" |
