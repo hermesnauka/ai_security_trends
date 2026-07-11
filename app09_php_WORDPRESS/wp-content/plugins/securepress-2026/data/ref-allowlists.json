@@ -1,0 +1,13 @@
+{
+  "owasp_refs": [
+    "A01:2021", "A02:2021", "A03:2021", "A04:2021", "A05:2021",
+    "A06:2021", "A07:2021", "A08:2021", "A09:2021", "A10:2021",
+    "LLM01:2025", "LLM02:2025", "LLM03:2025", "LLM04:2025", "LLM05:2025",
+    "LLM06:2025", "LLM07:2025", "LLM08:2025", "LLM09:2025", "LLM10:2025",
+    "MASVS-STORAGE", "MASVS-CRYPTO", "MASVS-AUTH", "MASVS-NETWORK",
+    "MASVS-PLATFORM", "MASVS-CODE", "MASVS-RESILIENCE",
+    "OAT-001", "OAT-002", "OAT-003", "OAT-004", "OAT-005", "OAT-006",
+    "OAT-007", "OAT-008", "OAT-011", "OAT-021"
+  ],
+  "note": "SR-07: any owasp_refs value in a curation file not present in this array is rejected before ingestion. Extend this list deliberately, through the same CODEOWNERS review as the curation files themselves (PLAN.md §12) — it is not auto-generated from any OWASP feed."
+}

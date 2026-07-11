@@ -1,0 +1,8 @@
+{
+  "EMR2": { "severity": "high",   "owasp_refs": [], "mitre_refs": [] },
+  "EMR3": { "severity": "medium", "owasp_refs": [], "mitre_refs": ["AML.T0018"] },
+  "EMR4": { "severity": "medium", "owasp_refs": ["A02:2021"], "mitre_refs": [] },
+  "EIR2": { "severity": "high",   "owasp_refs": [], "mitre_refs": ["AML.T0020"] },
+  "EOR2": { "severity": "medium", "owasp_refs": [], "mitre_refs": [] },
+  "EDR2": { "severity": "low",    "owasp_refs": [], "mitre_refs": ["AML.T0020"] }
+}

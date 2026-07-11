@@ -1,0 +1,20 @@
+{
+  "LLM2":  { "severity": "high",     "owasp_refs": ["LLM10:2025"],             "mitre_refs": ["AML.T0029"] },
+  "LLM3":  { "severity": "medium",   "owasp_refs": ["LLM09:2025"],             "mitre_refs": [] },
+  "LLM4":  { "severity": "high",     "owasp_refs": ["LLM02:2025", "LLM07:2025"], "mitre_refs": [] },
+  "AAI2":  { "severity": "high",     "owasp_refs": ["LLM06:2025"],             "mitre_refs": [] },
+  "AAI4":  { "severity": "medium",   "owasp_refs": ["LLM10:2025"],             "mitre_refs": [] },
+  "AAI5":  { "severity": "medium",   "owasp_refs": ["LLM07:2025"],             "mitre_refs": [] },
+  "AAIK":  { "severity": "critical", "owasp_refs": ["LLM06:2025"],             "mitre_refs": [] },
+  "CLD2":  { "severity": "high",     "owasp_refs": ["A01:2021"],               "mitre_refs": [] },
+  "CLD3":  { "severity": "high",     "owasp_refs": ["A05:2021"],               "mitre_refs": [] },
+  "CLD4":  { "severity": "medium",   "owasp_refs": ["A09:2021"],               "mitre_refs": [] },
+  "FRE2":  { "severity": "high",     "owasp_refs": ["A03:2021", "A04:2021"],   "mitre_refs": [] },
+  "FRE3":  { "severity": "medium",   "owasp_refs": ["A01:2021"],               "mitre_refs": [] },
+  "FRE4":  { "severity": "high",     "owasp_refs": ["A03:2021"],               "mitre_refs": [] },
+  "FRE5":  { "severity": "high",     "owasp_refs": ["A06:2021"],               "mitre_refs": [] },
+  "DVOK":  { "severity": "high",     "owasp_refs": ["A06:2021"],               "mitre_refs": [] },
+  "DVOQ":  { "severity": "high",     "owasp_refs": ["A02:2021"],               "mitre_refs": [] },
+  "BOTK":  { "severity": "medium",   "owasp_refs": ["OAT-011"],                "mitre_refs": [] },
+  "BOTX":  { "severity": "high",     "owasp_refs": ["OAT-008", "OAT-021"],     "mitre_refs": [] }
+}
