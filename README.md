@@ -39,8 +39,6 @@ https://www.vals.ai/benchmarks
 
 https://www.vals.ai/benchmarks#coding-benchmarks
 
-https://recbot.pl/blog/monika-gliwka/bezpieczenstwo-rozwiazan-wykorzystujacych-llms/
-
 https://ml-ops.org/content/crisp-ml
  
 https://www.hackerone.com/knowledge-center/what-ssdlc-secure-software-development-life-cycle
@@ -48,6 +46,10 @@ https://www.hackerone.com/knowledge-center/what-ssdlc-secure-software-developmen
 https://www.hackerone.com/blog/strengthening-sdlc-security-advisory-services-sas 
   
 https://www.hackerone.com/blog/how-streamline-your-sdlc-hai
+
+https://recbot.pl/blog/monika-gliwka/bezpieczenstwo-rozwiazan-wykorzystujacych-llms/
+
+https://cybersecgames.com/products/security-architects-a-fast-paced-threat-modeling-game
   
 https://www.hackerone.com/lp/top-ten-vulnerabilities
   
