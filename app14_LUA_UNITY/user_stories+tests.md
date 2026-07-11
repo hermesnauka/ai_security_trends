@@ -1,464 +1,528 @@
-# KotlinGuard 2026 — User Stories & TDD Test Plan
+# LuaGuard 2026 — User Stories & TDD Test Plan
 
 **Version:** 1.0
-**Date:** 2026-07-07
-**Approach:** Test-Driven Development — RED (failing test first) → GREEN (minimal implementation) → REFACTOR
-**Test stack:** JUnit 5 (unit) · Kotest (property-based testing) · Jetpack Compose UI Testing (`createAndroidComposeRule`, instrumented)
+**Date:** 2026-07-11
+**Stack:** Lua (LuaJIT/OpenResty + Lapis) backend, PostgreSQL; Unity 2022 LTS + MoonSharp (Lua)
+frontend
+**Test frameworks:** `busted` (backend unit + request specs; also run standalone against the
+frontend's `StreamingAssets/lua/*.lua` files, independent of Unity), Unity Test Framework
+(`EditMode` for C#-only glue, `PlayMode` for scene-level smoke tests)
+
+**Uwaga o pochodzeniu danych (zobacz `PLAN.md` §0.1):** surowe pliki `../docs/OWASP_stories/*.yaml`
+zawierają wyłącznie pola `id`/`value`/`url`/`desc`/`misc` — żaden plik źródłowy nie ma pola
+`severity`, `card_kind` ani referencji do OWASP/MITRE/CWE. Mapowania OWASP/MITRE w tabelach
+poniżej są treścią kuratorowaną przez zespół, nie wartościami wyodrębnionymi bezpośrednio z YAML.
+Cytaty angielskie poniżej są dosłownymi fragmentami tych plików; tłumaczenia polskie są
+kuratorowaną treścią tej aplikacji.
 
 ---
 
-## 0. Test Conventions
+## Konwencje testowe
 
-- **Unit tests** (`:data/src/test/kotlin`) — JUnit 5, run on the local JVM, no Android device/emulator required. Cover repositories, decoders, `IntegrityChecker`, `CardKind` handling.
-- **Property tests** (`:data/src/test/kotlin`, using **Kotest**'s property-testing module) — generate random inputs (e.g., arbitrary extra YAML keys, random `CardKind` values, random filter combinations) to catch classes of bugs a fixed example can miss. Kotest here plays the same role `SwiftCheck`/`eris`/`QuickCheck`/`proptest` play in the Swift/Haskell/Scala/Rust siblings.
-- **Instrumented UI tests** (`:app/src/androidTest/kotlin`) — Jetpack Compose UI Testing, run on an emulator or physical device via `createAndroidComposeRule<MainActivity>()`. One test file per user story (`Us01FrameworkListTest.kt` … `Us19DigitalHarmsTest.kt`).
-- **RED/GREEN/REFACTOR discipline:** every acceptance criterion below is written as a test **before** the corresponding production code exists. A PR introducing a new Composable/repository method without an accompanying failing-then-passing test is rejected in review.
-- **Coverage target:** ≥ 90% of listed test cases passing in CI before a milestone (per `PLAN.md` §16) is marked done; ≥ 85% statement coverage on `:data` (NFR-07).
+### Backend unit / request specs (`busted`, real Postgres test database, transaction rollback per example)
+```lua
+describe("GET /api/v1/threats", function()
+  it("filters by framework and severity", function()
+    local res = http.get("/api/v1/threats", { frameworkCode = "OWASP_LLM", severity = "critical" })
+    assert.are.equal(200, res.status)
+    local body = json.decode(res.body)
+    for _, threat in ipairs(body.content) do
+      assert.are.equal("OWASP_LLM", threat.frameworkCode)
+      assert.are.equal("critical", threat.severity)
+    end
+  end)
+end)
+```
 
----
+### Frontend Lua logic, tested standalone (no Unity Editor needed)
+```lua
+-- frontend/Assets/StreamingAssets/lua/spec/card_engine_spec.lua
+describe("card_engine.resolve_attack", function()
+  it("matches an attack to an open component vulnerability by STRIDE letter", function()
+    local component = { stride_open = { "E" } }
+    local attack = { stride = { "E" } }
+    assert.is_true(card_engine.resolve_attack(component, attack))
+  end)
 
-## US-01 — Browse the Security Framework Catalogue
+  it("does not match when the component's vulnerability is already protected", function()
+    local component = { stride_open = {} }
+    local attack = { stride = { "E" } }
+    assert.is_false(card_engine.resolve_attack(component, attack))
+  end)
+end)
+```
 
-**As a** security engineer, **I want** a single home screen listing every security framework in scope, **so that** I have one access point to all standards.
-
-**Acceptance criteria:**
-1. Home screen displays a tile for each of: OWASP Web Top 10, OWASP LLM Top 10, OWASP Agentic AI Top 10, OWASP API Security Top 10, OWASP Client-Side Top 10, OWASP CI/CD Security Top 10, OWASP Automated Threats (OAT), MITRE ATLAS, CompTIA Security+/SecAI+.
-2. Tapping a tile navigates to that framework's detail/threat-list screen.
-3. Screen renders correctly in both Polish and English (FR-18).
-
-```kotlin
-// data/src/test/kotlin/.../FrameworkRepositoryTest.kt
-class FrameworkRepositoryTest {
-    @Test
-    fun `list returns all nine seeded frameworks`() = runTest {
-        val repo: FrameworkRepository = FakeFrameworkRepository(seedFrameworks())
-        val result = repo.list()
-        assertEquals(9, result.size)
-        assertTrue(result.any { it.code == "OWASP_LLM" })
-        assertTrue(result.any { it.code == "MITRE_ATLAS" })
-    }
-}
-
-// app/src/androidTest/kotlin/.../Us01FrameworkListTest.kt
-class Us01FrameworkListTest {
-    @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
-
-    @Test
-    fun homeScreenShowsAllFrameworkTiles() {
-        composeRule.onNodeWithText("OWASP LLM Top 10").assertIsDisplayed()
-        composeRule.onNodeWithText("MITRE ATLAS").assertIsDisplayed()
-        composeRule.onNodeWithText("MITRE ATLAS").performClick()
-        composeRule.onNodeWithTag("FrameworkDetailScreen").assertIsDisplayed()
-    }
+### Unity `EditMode` (C# glue only — the sandbox boundary itself, not gameplay logic)
+```csharp
+[Test]
+public void LuaSandbox_NeverEnablesIoOrOsModules() {
+    var script = LuaSandbox.CreateSandboxedScript();
+    Assert.Throws<ScriptRuntimeException>(() => script.DoString("return io.open('/etc/passwd')"));
+    Assert.Throws<ScriptRuntimeException>(() => script.DoString("return os.execute('ls')"));
 }
 ```
 
 ---
 
-## US-02 — Filter Threats by Framework, Severity, STRIDE, Tag
+## Zasada TDD stosowana w tym projekcie
 
-**Acceptance criteria:**
-1. `ThreatRepository.list(filter)` returns only threats matching every non-null filter field.
-2. An empty filter returns the full threat list.
-3. Filtering by an unknown framework code returns an empty list, not an error.
+```
+RED       — napisz test (busted spec, Unity EditMode/PlayMode test) opisujący oczekiwane
+             zachowanie PRZED napisaniem kodu produkcyjnego
+GREEN     — napisz minimalny kod, który sprawia, że test przechodzi
+REFACTOR  — poprawiaj kod bez łamania testów; luacheck w tle na każdym CI run
+```
 
-```kotlin
-class ThreatRepositoryFilterTest {
-    @Test
-    fun `filter by severity CRITICAL returns only critical threats`() = runTest {
-        val repo = realRepository(seedThreats())
-        val result = repo.list(ThreatFilter(severity = Severity.CRITICAL))
-        assertTrue(result.all { it.severity == Severity.CRITICAL })
-    }
+**Uwaga strukturalna:** Lua (w obu środowiskach uruchomieniowych) nie ma kompilatora
+sprawdzającego typy przed uruchomieniem — dokładnie ta sama sytuacja co w Ruby
+(`app13_ruby_FastApi`) i PHP (`app09_php_WORDPRESS`), ale bez żadnego z ich odpowiedników
+statycznej analizy typów opcjonalnych. Warstwa "unit" backendu to prawdziwe testy przeciwko
+rzeczywistej (ale wycofywanej transakcyjnie po każdym przykładzie) bazie PostgreSQL. Warstwa
+frontendowa Lua (`card_engine.lua`, `game_modes.lua`, `i18n.lua`) jest testowana **dwukrotnie**:
+raz przez `busted` uruchomiony samodzielnie (szybka pętla RED/GREEN bez Unity), raz przez
+Unity `PlayMode` (potwierdzenie, że MoonSharp faktycznie wykonuje ten sam plik `.lua`
+identycznie wewnątrz silnika).
 
-    @Test
-    fun `filter by unknown framework code returns empty list`() = runTest {
-        val repo = realRepository(seedThreats())
-        assertTrue(repo.list(ThreatFilter(frameworkCode = "DOES_NOT_EXIST")).isEmpty())
-    }
-}
+---
 
-// Kotest property test — the Room @Query is verified at compile time (D-04);
-// this property spot-checks the RUNTIME filtering logic against random combinations.
-class ThreatFilterPropertyTest : StringSpec({
-    "combining severity and framework filters never returns a threat matching neither" {
-        checkAll(Arb.enum<Severity>(), Arb.string(3..10)) { severity, frameworkCode ->
-            val result = realRepository(seedThreats()).list(ThreatFilter(severity, frameworkCode))
-            result.all { it.severity == severity && it.frameworkCode == frameworkCode }
-        }
-    }
-})
+## US-01 — Katalog frameworków bezpieczeństwa
+
+**Rola:** security engineer
+**Potrzeba:** przeglądać katalog wszystkich frameworków bezpieczeństwa
+**Cel:** mieć jeden punkt dostępu do wszystkich standardów
+
+### Kryteria akceptacji
+- `FrameworksScene` wyświetla kafelek per framework z liczbą zagrożeń
+- Kliknięcie kafelka nawiguje do `ThreatsScene` przefiltrowanej po tym frameworku
+
+### Plan testów TDD
+```lua
+it("returns at least five seeded frameworks", function()
+  local res = http.get("/api/v1/frameworks")
+  assert.is_true(#json.decode(res.body) >= 5)
+end)
 ```
 
 ---
 
-## US-03 — Threat Detail with Mitigations and Code
+## US-02 — Przeglądarka zagrożeń z filtrami
 
-**Acceptance criteria:** detail screen shows Overview/Attack Vectors/Mitigations/Code/Cross-References sections; every mitigation lists ≥ 5 code samples (DR-03).
+**Rola:** security engineer
+**Potrzeba:** filtrować zagrożenia po frameworku, severity, STRIDE, tagu, `q`
+**Cel:** szybko znaleźć zagrożenia istotne dla mojego projektu
 
-```kotlin
-class MitigationCompletenessPropertyTest : StringSpec({
-    "every seeded mitigation has exactly 5 code samples, one per required language" {
-        val required = setOf(CodeLanguage.PYTHON, CodeLanguage.JAVA, CodeLanguage.GO, CodeLanguage.SCALA, CodeLanguage.LUA)
-        seedMitigations().forAll { mitigation ->
-            val langs = seedCodeSamples().filter { it.mitigationId == mitigation.id }.map { it.language }.toSet()
-            langs == required
-        }
-    }
-})
+### Plan testów TDD
+```lua
+it("combines framework and severity filters", function()
+  local res = http.get("/api/v1/threats", { frameworkCode = "OWASP_LLM", severity = "critical" })
+  local body = json.decode(res.body)
+  assert.is_true(#body.content > 0)
+end)
 ```
 
 ---
 
-## US-04 — Cross-Framework Matrix (LLM01 ↔ MITRE ATLAS)
+## US-03 — Szczegóły zagrożenia z mitigacjami i kodem w 5 językach
 
-```kotlin
-class MatrixRepositoryTest {
-    @Test
-    fun `llmMatrix maps LLM01 2025 to AML T0051`() = runTest {
-        val matrix = realMatrixRepository().llmMatrix()
-        assertTrue(matrix.rows.any { it.owaspCode == "LLM01:2025" && it.atlasCodes.contains("AML.T0051") })
-    }
-}
+**Rola:** security engineer
+**Potrzeba:** widzieć szczegóły zagrożenia z mitigacjami i próbkami kodu (Python/Java/Go/Scala/Lua)
+**Cel:** wiedzieć jak wdrożyć ochronę
+
+### Plan testów TDD
+```lua
+it("every seeded mitigation has all five languages", function()
+  for _, mitigation in ipairs(Mitigation:select()) do
+    local languages = {}
+    for _, sample in ipairs(CodeSample:select("where mitigation_slug = ?", mitigation.slug)) do
+      languages[sample.language] = true
+    end
+    local expected = { python = true, java = true, go = true, scala = true, lua = true }
+    assert.are.same(expected, languages)
+  end
+end)
+```
+**Unity `PlayMode`:** `ThreatDetailScene` renders 5 code-sample tabs; the attack-demo tab body
+is hidden until the confirmation modal is dismissed (D-09, SR-09).
+
+---
+
+## US-04 — Mapowanie cross-framework (LLM ↔ MITRE ATLAS)
+
+**Rola:** AI security architect
+**Potrzeba:** widzieć, które karty Cornucopia LLM odnoszą się do których zagrożeń OWASP LLM Top 10 i technik MITRE ATLAS
+**Cel:** budować macierz pokrycia bez ręcznego mapowania
+
+### Przykładowa karta źródłowa (`__LLM_AI___companion-cards-1.0-en.yaml`, suit LLM, oryginał)
+> **LLM2:** "Samantha can exhaust computational resources or increase operational costs by
+> submitting resource-intensive or recursive LLM queries, leading to model DoS"
+
+### Tłumaczenie na polski (treść kuratorowana)
+> **LLM2:** Samantha może wyczerpać zasoby obliczeniowe lub zwiększyć koszty operacyjne,
+> wysyłając zasobożerne lub rekurencyjne zapytania do LLM, prowadząc do odmowy usługi (DoS)
+> modelu.
+
+### Pokrycie OWASP i MITRE ATLAS
+Karta LLM2 jest kuratorowana z `owasp_refs: ["LLM10:2025"]` — **LLM10:2025 "Unbounded
+Consumption"** — oraz `mitre_refs: ["AML.T0029"]` (Denial of ML Service), zgodnie z mapowaniem
+w `../docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md`. To ta sama karta i
+mitigacja (`rate-limiting-unbounded-consumption`, próbka Lua, FR-08), która łączy tę historię
+użytkownika z realnym kodem obronnym w tej aplikacji.
+
+### Plan testów TDD
+```lua
+it("maps LLM2 to LLM10:2025 and AML.T0029", function()
+  local row = json.decode(http.get("/api/v1/matrix/llm").body).rows
+  local llm2 = find_by(row, "cardId", "LLM2")
+  assert.is_true(includes(llm2.owaspRefs, "LLM10:2025"))
+  assert.is_true(includes(llm2.mitreRefs, "AML.T0029"))
+end)
 ```
 
 ---
 
-## US-05 — Website App Cornucopia FRE Suit (Client-Side Threats)
+## US-05 — Nadmierna sprawczość agenta AI (karta LLM3 — overreliance)
 
-**Real card content, translated to Polish, from `__LLM_AI___companion-cards-1.0-en.yaml` — FRE suit:**
+**Rola:** AI/ML engineer
+**Potrzeba:** widzieć zagrożenie nadmiernego polegania na wynikach LLM bez weryfikacji człowieka
+**Cel:** wdrożyć bramkę human-in-the-loop przed wykonaniem krytycznej akcji
 
-| Card | English | Polish | OWASP mapping |
-|---|---|---|---|
-| FRE2 | *As a Fraudster, I can create synthetic identities using AI-generated profile photos and fabricated personal data, so that I can pass identity verification checks and open fraudulent accounts.* | *Jako oszust, mogę tworzyć syntetyczne tożsamości przy użyciu wygenerowanych przez AI zdjęć profilowych i sfabrykowanych danych osobowych, aby przejść weryfikację tożsamości i otworzyć fałszywe konta.* | OWASP Client-Side Top 10 (C01), OAT-019 (Account Creation) |
-| FRE3 | *As a Fraudster, I can use AI voice cloning from short audio samples to bypass voice biometric authentication, so that I can impersonate a legitimate account holder.* | *Jako oszust, mogę użyć klonowania głosu AI z krótkich próbek audio, aby obejść uwierzytelnianie biometryczne głosem, i podszyć się pod prawowitego posiadacza konta.* | CompTIA Security+ (biometric spoofing), MITRE ATLAS AML.T0043 |
-| FRE4 | *As a Fraudster, I can automate the generation of thousands of realistic-looking phishing pages using AI, so that I can scale credential-harvesting campaigns beyond manual capacity.* | *Jako oszust, mogę zautomatyzować generowanie tysięcy realistycznie wyglądających stron phishingowych za pomocą AI, aby skalować kampanie wyłudzania poświadczeń poza ręczne możliwości.* | OWASP Client-Side Top 10, OAT-006 (Expediting) |
-| FRE5 | *As a Fraudster, I can use an LLM to generate convincing, personalized social-engineering scripts at scale, so that I can increase the success rate of vishing/smishing campaigns.* | *Jako oszust, mogę użyć LLM do generowania przekonujących, spersonalizowanych skryptów socjotechnicznych na skalę, aby zwiększyć skuteczność kampanii vishing/smishing.* | OWASP LLM Top 10 (LLM09 Misinformation, misuse), CompTIA SecAI+ |
+### Przykładowa karta źródłowa (suit LLM, oryginał)
+> **LLM3:** "Dave can exploit overreliance on LLM outputs where critical human oversight is
+> missing, leading to security failures or incorrect decisions based on hallucinations or
+> flawed reasoning"
 
-**Acceptance criteria:** all 4 FRE cards render with both languages; each cross-references at least one OWASP/MITRE code.
+### Tłumaczenie na polski
+> **LLM3:** Dave może wykorzystać nadmierne poleganie na wynikach LLM w sytuacji braku
+> krytycznego nadzoru człowieka, prowadząc do awarii bezpieczeństwa lub błędnych decyzji
+> opartych na halucynacjach lub wadliwym rozumowaniu.
 
-```kotlin
-class FreCardDecoderTest {
-    @Test
-    fun `FRE suit decodes with Polish and English descriptions and non-empty OWASP refs`() {
-        val cards = CardFileDecoders.decodeCompanion(loadAsset("cornucopia/companion-llm-cards-1.0-en.yaml"))
-            .filter { it.suitCode == "FRE" }
-        assertEquals(4, cards.size) // FRE2..FRE5 in scope
-        cards.forEach {
-            assertTrue(it.descriptionPl.isNotBlank())
-            assertTrue(it.owaspRefs.isNotEmpty())
-        }
-    }
-}
+### Pokrycie OWASP
+Kuratorowane `owasp_refs: ["LLM09:2025"]` — **LLM09:2025 "Misinformation"** (dawniej
+Overreliance) z OWASP Top 10 for LLM Applications.
+
+---
+
+## US-06 — STRIDE Spoofing i Elevation of Privilege — katalog i heatmapa
+
+**Rola:** threat modeler
+**Potrzeba:** przeglądać talię STRIDE (Spoofing/Elevation of Privilege) i widzieć pokrycie per kategoria
+**Cel:** zidentyfikować luki w modelowaniu zagrożeń mojego systemu
+
+### Przykładowe karty źródłowe (`STRIDE__eop-cards-5.0-en.yaml`, oryginał)
+> **SP2:** "An attacker could take over the port or socket that the server normally uses"
+> **EP2:** "An attacker has compromised a key technology supplier"
+
+### Tłumaczenie na polski
+> **SP2:** Atakujący mógłby przejąć port lub gniazdo sieciowe, którego normalnie używa serwer.
+> **EP2:** Atakujący skompromitował kluczowego dostawcę technologii.
+
+### Pokrycie OWASP/STRIDE
+SP2 → kategoria STRIDE **S (Spoofing)**. EP2 → kategoria STRIDE **E (Elevation of Privilege)**,
+kuratorowane `owasp_refs: ["A03:2021"]` (łańcuch dostaw jako wektor eskalacji uprawnień, ta sama
+klasa zagrożenia co mitigacja `supply-chain-dependency-integrity`, FR-08, próbka Scala).
+
+### Kryteria akceptacji
+- `GET /api/v1/matrix/stride-heatmap` zwraca liczbę kart per kategoria STRIDE (S/T/R/I/D/E)
+- Heatmapa to uproszczone zliczenie kart per kategoria, nie pełne pokrycie "per komponent
+  systemu" — ten sam uczciwy zakres co u każdego siostrzanego projektu
+
+### Grywalne powiązanie (Phase 2+, FR-12)
+Karty SP2/EP2 to realne przykłady kart Attack z gry "Security Architects" — w trybie Regular
+gracz broni komponentu przed dokładnie takim atakiem, dobierając kartę Protection z tej samej
+litery STRIDE.
+
+---
+
+## US-07 — Bezpieczeństwo ML (karty MLSec — catastrophic forgetting)
+
+**Rola:** ML engineer
+**Potrzeba:** widzieć zagrożenia specyficzne dla uczenia maszynowego (talia "Elevation of MLSec")
+**Cel:** zabezpieczyć pipeline trenowania/wnioskowania modelu
+
+### Przykładowa karta źródłowa (`RISKS__elevation-of-mlsec-cards-1.0-en.yaml`, oryginał)
+> **EMR2:** "When a model is filled with too much overlapping information, collisions in the
+> representation space may lead to the model "forgetting" information." *(misc: Catastrophic
+> forgetting)*
+
+### Tłumaczenie na polski
+> **EMR2:** Gdy model zostaje przeładowany nadmiarowo nakładającymi się informacjami, kolizje
+> w przestrzeni reprezentacji mogą prowadzić do "zapominania" informacji przez model.
+> *(Catastrophic forgetting — katastrofalne zapominanie)*
+
+### Kryteria akceptacji
+- `GET /api/v1/cards?edition=mlsec` zwraca karty z prefiksem `EMR`/`EIR`/`EOR`/`EDR`
+
+---
+
+## US-08 — Bezpieczeństwo mobile (karty Mobile — ekran w tle)
+
+**Rola:** mobile security engineer
+**Potrzeba:** widzieć zagrożenia mobilne (talia Mobile App)
+**Cel:** ocenić ryzyko aplikacji mobilnej pod kątem OWASP MASVS
+
+### Przykładowa karta źródłowa (`mobileapp-cards-1.1-en.yaml`, oryginał)
+> **PC2:** "Andrew can expose sensitive data through the app's auto-generated screenshots when
+> the app moves to the background"
+
+### Tłumaczenie na polski
+> **PC2:** Andrew może ujawnić wrażliwe dane poprzez automatycznie generowane zrzuty ekranu
+> aplikacji, gdy aplikacja przechodzi w tło.
+
+### Uwaga o podwójnym znaczeniu dla tej aplikacji
+Ta karta jest bezpośrednio istotna dla samej aplikacji Unity — Unity generuje podobne
+zrzuty stanu ekranu przy przełączaniu aplikacji w tło na urządzeniach mobilnych; Phase-1 nie
+implementuje żadnego ekranu wprowadzania hasła/tokenu, który wymagałby zaciemnienia w tym
+momencie (login screen jest jedynym wyjątkiem, patrz `PLAN.md` D-08's caveat), ale karta jest
+udokumentowana tutaj jako świadomie przyjęte ryzyko do rewizji przy realnym mobilnym buildzie.
+
+---
+
+## US-09 — Digital-by-Default Harms (karta SCO2 — brak transparentności)
+
+**Rola:** public-sector digital service designer
+**Potrzeba:** widzieć harmy projektowe (nie techniczne podatności) usług cyfrowych domyślnych
+**Cel:** zidentyfikować ryzyko braku transparentności przed wdrożeniem usługi
+
+### Przykładowa karta źródłowa (`dbd-cards-1.0-en.yaml`, oryginał)
+> **SCO2:** "Tommy does not create, publish and maintain publicly all the service
+> assumptions, specifications, constraints, source code, algorithms, formulas, configuration
+> settings, operating instructions and processes"
+
+### Tłumaczenie na polski
+> **SCO2:** Tommy nie tworzy, nie publikuje i nie utrzymuje publicznie wszystkich założeń,
+> specyfikacji, ograniczeń, kodu źródłowego, algorytmów, formuł, ustawień konfiguracyjnych,
+> instrukcji obsługi ani procesów usługi.
+
+### Kryteria akceptacji (D-03)
+- Karty tej talii mają `card_kind = 'design_harm'` i **strukturalnie** `severity IS NULL`
+  (wymuszone przez `CHECK` w bazie danych, `PLAN.md` §4 D-03)
+
+### Plan testów TDD
+```lua
+it("never allows a design_harm row to carry a severity", function()
+  assert.has_error(function()
+    db.insert("cards", { card_id = "TEST1", card_kind = "design_harm", severity = "high" })
+  end)
+end)
 ```
 
 ---
 
-## US-06 — LLM Cornucopia Suit + Interactive Matrix
+## US-10 — Website App / Injection (karta VE2)
 
-| Card | English | Polish | OWASP mapping |
-|---|---|---|---|
-| LLM2 | *As an Attacker, I can inject malicious instructions hidden in retrieved documents (indirect prompt injection), so that I can hijack the LLM's behavior without directly interacting with the prompt.* | *Jako atakujący, mogę wstrzyknąć złośliwe instrukcje ukryte w pobranych dokumentach (pośrednia iniekcja promptu), aby przejąć kontrolę nad zachowaniem LLM bez bezpośredniej interakcji z promptem.* | LLM01:2025 Prompt Injection |
-| LLM3 | *As an Attacker, I can poison the training or fine-tuning dataset with subtly biased or malicious examples, so that the model learns harmful behavior that activates only under specific trigger conditions.* | *Jako atakujący, mogę zatruć zbiór danych treningowych lub fine-tuningowych subtelnie stronniczymi lub złośliwymi przykładami, aby model nauczył się szkodliwego zachowania aktywowanego tylko w określonych warunkach.* | LLM04:2025 Data and Model Poisoning |
-| LLM4 | *As an Attacker, I can exploit an LLM agent's excessive autonomy to invoke tools/APIs beyond its intended scope, so that I can exfiltrate data or perform unauthorized actions.* | *Jako atakujący, mogę wykorzystać nadmierną autonomię agenta LLM do wywoływania narzędzi/API poza jego zamierzonym zakresem, aby wyeksfiltrować dane lub wykonać nieautoryzowane działania.* | LLM06:2025 Excessive Agency |
+**Rola:** web application security engineer
+**Potrzeba:** przeglądać talię Website App Cornucopia (najstarszą, najbardziej dojrzałą talię)
+**Cel:** zmapować karty na OWASP Web Top 10
 
-**Acceptance criteria:** LLM suit screen includes an interactive matrix cross-referencing each card to its OWASP LLM Top 10 entry.
+### Przykładowa karta źródłowa (`webapp-cards-3.0-en.yaml`, oryginał)
+> **VE3:** "Robert can input malicious data because the allowed protocol format is not being
+> checked, or duplicates are accepted, or the structure is not being verified..."
 
-```kotlin
-@Test
-fun `llm suit cards map onto distinct OWASP LLM Top 10 entries`() = runTest {
-    val cards = cardRepository.bySuit("LLM")
-    val mapped = cards.flatMap { it.owaspRefs }.filter { it.startsWith("LLM0") }
-    assertTrue(mapped.toSet().size >= 3)
-}
+### Tłumaczenie na polski
+> **VE3:** Robert może wprowadzić złośliwe dane, ponieważ dozwolony format protokołu nie jest
+> sprawdzany, akceptowane są duplikaty, lub struktura nie jest weryfikowana.
+
+### Pokrycie OWASP
+Kuratorowane `owasp_refs: ["A03:2021"]` — **A03:2021 "Injection"**, ta sama kategoria co
+mitigacja `sql-injection-prevention` (FR-08, próbka Python).
+
+---
+
+## US-11 — Próbki kodu w pięciu językach (Python/Java/Go/Scala/Lua)
+
+**Rola:** backend developer (dowolny z pięciu ekosystemów)
+**Potrzeba:** widzieć realną, kompletną próbkę kodu demonstrującą atak i obronę we własnym języku
+**Cel:** zaimplementować odpowiednią mitigację we własnym stosie technologicznym
+
+### Kryteria akceptacji
+- Mitigacja `sql-injection-prevention`: Python (`attack_demo`/`defense`)
+- Mitigacja `broken-access-control-check`: Java (`attack_demo`/`defense`)
+- Mitigacja `supply-chain-dependency-integrity`: Scala (`attack_demo`/`defense`)
+- Mitigacja `rate-limiting-unbounded-consumption`: Lua (`attack_demo`/`defense`) — **jedyny
+  przypadek w tej aplikacji, gdzie język próbki kodu jest tym samym językiem, w którym
+  napisany jest sam backend** (`PLAN.md` §10) — warto to jawnie sprawdzić testem, żeby próbka
+  faktycznie różniła się (inny kontekst: klucz API gateway vs. framework webowy), a nie była
+  przypadkowo skopiowanym fragmentem samego backendu
+- Mitigacja `prompt-injection-defense` (Go): `attack_demo`/`defense`
+
+### Plan testów TDD
+```lua
+it("the Lua code sample is not a verbatim copy of the backend's own route handler", function()
+  local sample = CodeSample:find_by("rate-limiting-unbounded-consumption", "lua", "defense")
+  local route_source = read_file("app/routes/threats.lua")
+  assert.is_false(string.find(route_source, sample.code, 1, true) ~= nil)
+end)
 ```
 
 ---
 
-## US-07 — AAI (Agentic AI) + CLD (Cloud) Suits
+## US-12 — Globalne wyszukiwanie
 
-| Card | English | Polish | OWASP/other mapping |
-|---|---|---|---|
-| AAI2 | *As an Attacker, I can manipulate an autonomous agent's planning loop to skip a required human-approval checkpoint, so that I can execute a high-impact action without oversight.* | *Jako atakujący, mogę manipulować pętlą planowania autonomicznego agenta, aby pominąć wymagany punkt zatwierdzenia przez człowieka, i wykonać działanie o wysokim wpływie bez nadzoru.* | OWASP Agentic AI Top 10 (Human-in-the-Loop bypass) |
-| AAI4 | *As an Attacker, I can chain multiple agent tool calls to escalate privileges beyond any single tool's individual permission scope, so that I gain access no single authorized call would grant.* | *Jako atakujący, mogę łączyć wiele wywołań narzędzi agenta, aby eskalować uprawnienia poza zakres pojedynczego narzędzia, i uzyskać dostęp, którego żadne pojedyncze autoryzowane wywołanie by nie przyznało.* | OWASP Agentic AI Top 10, MITRE ATLAS AML.T0053 |
-| AAI5 | *As an Attacker, I can poison an agent's long-term memory store with false facts, so that future planning decisions are made on corrupted context.* | *Jako atakujący, mogę zatruć długoterminową pamięć agenta fałszywymi faktami, aby przyszłe decyzje planistyczne opierały się na skorumpowanym kontekście.* | OWASP Agentic AI Top 10, LLM04:2025 |
-| CLD2 | *As an Attacker, I can exploit an overly permissive IAM role attached to a serverless function, so that I can pivot from the function's limited scope into broader cloud account access.* | *Jako atakujący, mogę wykorzystać zbyt permisywną rolę IAM przypisaną do funkcji bezserwerowej, aby przejść z ograniczonego zakresu funkcji do szerszego dostępu do konta chmurowego.* | OWASP Cloud-Native Top 10, CompTIA Security+ (IAM) |
-| CLD3 | *As an Attacker, I can discover a publicly exposed object-storage bucket with default permissions, so that I can read or modify sensitive data without authentication.* | *Jako atakujący, mogę odkryć publicznie dostępny zasobnik obiektowy z domyślnymi uprawnieniami, aby odczytać lub zmodyfikować wrażliwe dane bez uwierzytelnienia.* | OWASP A05:2021 Security Misconfiguration |
-| CLD4 | *As an Attacker, I can abuse a misconfigured CI/CD pipeline's cloud credentials cached in a build log, so that I can obtain persistent access to production infrastructure.* | *Jako atakujący, mogę wykorzystać dane uwierzytelniające chmury z niewłaściwie skonfigurowanego potoku CI/CD, zapisane w logu builda, aby uzyskać trwały dostęp do infrastruktury produkcyjnej.* | OWASP CI/CD Security Top 10 (CICD-SEC-6) |
+**Rola:** security engineer
+**Potrzeba:** wyszukiwać zagrożenia i karty jednym zapytaniem tekstowym
+**Cel:** szybko znaleźć relevantną treść bez znajomości dokładnej kategorii
 
-```kotlin
-@Test
-fun `AAI and CLD suits both present with non-empty translated descriptions`() = runTest {
-    listOf("AAI", "CLD").forEach { suit ->
-        val cards = cardRepository.bySuit(suit)
-        assertTrue(cards.isNotEmpty())
-        cards.forEach { assertTrue(it.descriptionPl.isNotBlank()) }
-    }
-}
+### Plan testów TDD
+```lua
+it("finds a threat by title substring, case-insensitively", function()
+  local res = json.decode(http.get("/api/v1/search", { q = "injection" }).body)
+  assert.is_true(any(res, function(r) return r.code == "A03:2021" end))
+end)
 ```
 
 ---
 
-## US-08 — STRIDE/EoP Catalogue + Heatmap
+## US-13 — Przełącznik języka Polski/Angielski
 
-| Card | English | Polish | STRIDE category |
-|---|---|---|---|
-| SP2 | *As an Attacker, I can spoof a trusted internal service's hostname via DNS cache poisoning, so that clients send requests intended for the real service to my malicious endpoint.* | *Jako atakujący, mogę podszyć się pod nazwę hosta zaufanej usługi wewnętrznej poprzez zatrucie pamięci podręcznej DNS, aby klienci wysyłali żądania przeznaczone dla prawdziwej usługi na mój złośliwy punkt końcowy.* | Spoofing |
-| TA2 | *As an Attacker, I can intercept and modify an unsigned firmware update package in transit, so that I can install persistent malicious code on the target device.* | *Jako atakujący, mogę przechwycić i zmodyfikować niepodpisany pakiet aktualizacji oprogramowania układowego podczas przesyłania, aby zainstalować trwały złośliwy kod na urządzeniu docelowym.* | Tampering |
-| TA6 | *As an Attacker, I can tamper with a log-forwarding pipeline to alter events before they reach the SIEM, so that my subsequent malicious activity is not recorded for detection.* | *Jako atakujący, mogę manipulować potokiem przesyłania logów, aby zmienić zdarzenia przed dotarciem do SIEM, tak aby moja późniejsza złośliwa aktywność nie została zarejestrowana do wykrycia.* | Tampering |
+**Rola:** dowolny użytkownik (polsko- lub anglojęzyczny)
+**Potrzeba:** przełączyć cały interfejs i treść zagrożeń/kart między polskim a angielskim w jedno kliknięcie
+**Cel:** korzystać z aplikacji w preferowanym języku bez przeładowania sceny
 
-**Acceptance criteria:** heatmap Composable renders 6 cells (S/T/R/I/D/E) with per-category card counts; tapping a cell filters the card list.
+### Kryteria akceptacji (D-05, FR-10)
+- Domyślny język to polski
+- Przełącznik w `LoginScene`/ekranie ustawień natychmiast aktualizuje wszystkie widoczne
+  napisy UI (Lua `i18n.lua`) oraz treść zagrożeń/kart pobraną z `?locale=` (bez ponownego
+  ładowania sceny Unity)
+- Żaden string interfejsu nie istnieje tylko w jednym języku (NFR-06)
 
-```kotlin
-class StrideHeatmapViewModelTest {
-    @Test
-    fun `heatmap counts sum to total seeded STRIDE cards`() = runTest {
-        val vm = StrideHeatmapViewModel(FakeCardRepository(seedStrideCards()))
-        val total = vm.state.value.categoryCounts.values.sum()
-        assertEquals(seedStrideCards().size, total)
-    }
-}
+### Plan testów TDD (frontend Lua, standalone `busted`)
+```lua
+it("switching locale updates a UI string instantly", function()
+  i18n.set_locale("en")
+  assert.are.equal("Threats", i18n.t("nav.threats"))
+  i18n.set_locale("pl")
+  assert.are.equal("Zagrożenia", i18n.t("nav.threats"))
+end)
+
+it("every key in the Polish table also exists in the English table and vice versa", function()
+  local pl_keys, en_keys = i18n.key_set("pl"), i18n.key_set("en")
+  assert.are.same(pl_keys, en_keys)
+end)
 ```
 
 ---
 
-## US-09 — Elevation-of-MLSec Deck
+## US-14 — Sandbox MoonSharp (D-07 — unikalne dla tej aplikacji)
 
-| Card | English | Polish | MITRE ATLAS mapping |
-|---|---|---|---|
-| EMR2 | *As an Attacker, I can craft adversarial input perturbations invisible to a human reviewer, so that the model misclassifies malicious content as benign.* | *Jako atakujący, mogę spreparować przeciwstawne (adversarial) zaburzenia danych wejściowych, niewidoczne dla ludzkiego recenzenta, aby model błędnie sklasyfikował złośliwą treść jako nieszkodliwą.* | AML.T0043 (Craft Adversarial Data) |
-| EMR3 | *As an Attacker, I can repeatedly query a deployed model's API to reconstruct its decision boundary, so that I can steal an approximation of the proprietary model.* | *Jako atakujący, mogę wielokrotnie odpytywać API wdrożonego modelu, aby zrekonstruować jego granicę decyzyjną, i wykraść przybliżenie zastrzeżonego modelu.* | AML.T0024 (Model Extraction) |
-| EMR4 | *As an Attacker, I can submit specially crafted queries to a deployed model to infer whether a specific record was part of its training set, so that I violate the privacy of individuals in the training data.* | *Jako atakujący, mogę przesyłać specjalnie spreparowane zapytania do wdrożonego modelu, aby wywnioskować, czy konkretny rekord znajdował się w zbiorze treningowym, i naruszyć prywatność osób w danych treningowych.* | AML.T0024, CompTIA SecAI+ (membership inference) |
+**Rola:** platform security engineer
+**Potrzeba:** mieć pewność, że silnik Lua osadzony w kliencie Unity nigdy nie zyskuje dostępu do
+systemu plików lub procesów
+**Cel:** zapobiec eskalacji od "błędu w danych karty" do "zdalnego wykonania kodu na urządzeniu gracza"
 
-```kotlin
-@Test
-fun `mlsec cards cross-reference at least one MITRE ATLAS technique each`() = runTest {
-    cardRepository.bySuit("EMR").forEach { assertTrue(it.mitreRefs.isNotEmpty()) }
+### Kryteria akceptacji (SR-10, SR-11)
+- Instancja `Script` MoonSharp jest tworzona wyłącznie z `CoreModules.Preset_SoftSandbox` minus
+  `os`/`io`
+- `CoreModules.Full` nie pojawia się nigdzie w kodzie (weryfikowane przez CI grep-check)
+- Żaden obiekt C# zarejestrowany jako `UserData` nie jest przekazywany do Lua — granica
+  C#↔Lua przenosi wyłącznie dane (tabele/stringi/liczby/booleany)
+
+### Plan testów TDD
+```csharp
+[Test]
+public void LuaSandbox_CannotReadArbitraryFiles() {
+    var script = LuaSandbox.CreateSandboxedScript();
+    Assert.Throws<ScriptRuntimeException>(() => script.DoString("return io.open('/etc/passwd'):read('*a')"));
 }
+
+[Test]
+public void LuaSandbox_CannotSpawnProcesses() {
+    var script = LuaSandbox.CreateSandboxedScript();
+    Assert.Throws<ScriptRuntimeException>(() => script.DoString("os.execute('rm -rf /')"));
+}
+```
+**CI grep-check:** `! grep -rn "CoreModules.Full" frontend/Assets/Scripts/` must exit 0 (no match).
+
+---
+
+## US-15 — Tryb Regular gry "Security Architects: Digital" (Phase 2+)
+
+**Rola:** gracz ucząca się STRIDE
+**Potrzeba:** rozegrać sesję trybu Regular, broniąc komponentów przez 6 tur
+**Cel:** nauczyć się kategorii STRIDE poprzez rozgrywkę, nie tylko czytanie katalogu
+
+### Kryteria akceptacji (FR-12, zasady z `../docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md`)
+- Sesja zaczyna się z reputacją 10, 3 kartami komponentów na stole
+- Każda tura: faza ochrony (dobranie kart Protection) → faza zdarzeń losowych (Component/Event/Attack)
+- Atak trafia tylko wtedy, gdy istnieje komponent z otwartą (niezabezpieczoną) podatnością
+  odpowiadającą literze STRIDE ataku — trafienie odejmuje 1 punkt reputacji
+- Zwycięstwo: przetrwanie 6 tur z reputacją > 0. Porażka: reputacja spada do 0
+
+### Plan testów TDD
+```lua
+describe("game_modes.regular", function()
+  it("an attack against a fully-protected component does nothing", function()
+    local session = game_modes.regular.new_session()
+    session.components[1].stride_open = {}
+    local rep_before = session.reputation
+    game_modes.regular.resolve_attack(session, { stride = { "E" } })
+    assert.are.equal(rep_before, session.reputation)
+  end)
+
+  it("an attack against an open matching vulnerability costs exactly 1 reputation", function()
+    local session = game_modes.regular.new_session()
+    session.components[1].stride_open = { "E" }
+    local rep_before = session.reputation
+    game_modes.regular.resolve_attack(session, { stride = { "E" } })
+    assert.are.equal(rep_before - 1, session.reputation)
+  end)
+
+  it("declares defeat when reputation reaches 0", function()
+    local session = game_modes.regular.new_session()
+    session.reputation = 0
+    assert.are.equal("defeat", game_modes.regular.check_end_state(session))
+  end)
+end)
 ```
 
 ---
 
-## US-10 — Mobile App Cornucopia Deck — This App's OWN Threat Model
+## US-16 — Tryb Shift Left (Phase 2+)
 
-| Card | English | Polish | Cross-reference to KotlinGuard's own design |
-|---|---|---|---|
-| PC2 | *As an Attacker, I can access a mobile app's exported Activity or Service from another app installed on the same device, so that I can trigger privileged functionality without the intended UI-level access controls.* | *Jako atakujący, mogę uzyskać dostęp do eksportowanej Activity lub Service aplikacji mobilnej z innej aplikacji zainstalowanej na tym samym urządzeniu, aby wywołać uprzywilejowaną funkcjonalność z pominięciem zamierzonej kontroli dostępu na poziomie UI.* | Directly mitigated by **D-02**: every KotlinGuard component is `exported="false"` except the launcher `MainActivity` |
-| PC3 | *As an Attacker, I can read data written by a mobile app to unencrypted `SharedPreferences` or external storage, so that I can extract sensitive tokens or user data from a rooted or backed-up device.* | *Jako atakujący, mogę odczytać dane zapisane przez aplikację mobilną w niezaszyfrowanych `SharedPreferences` lub pamięci zewnętrznej, aby wydobyć wrażliwe tokeny lub dane użytkownika z zrootowanego lub zapisanego w kopii zapasowej urządzenia.* | Directly mitigated by **D-07/SR-09**: the Firestore sync token uses `EncryptedSharedPreferences` (Keystore-backed) and **SR-15**: `allowBackup="false"` |
-| PC4 | *As an Attacker, I can perform a man-in-the-middle attack against a mobile app's network traffic by installing a rogue CA certificate, so that I can intercept and modify data in transit if the app accepts cleartext or improperly validated TLS.* | *Jako atakujący, mogę przeprowadzić atak man-in-the-middle na ruch sieciowy aplikacji mobilnej, instalując fałszywy certyfikat CA, aby przechwycić i zmodyfikować dane w tranzycie, jeśli aplikacja akceptuje niezaszyfrowany ruch lub niepoprawnie zweryfikowany TLS.* | Directly mitigated by **SR-10.1**: `network_security_config.xml` disables cleartext traffic for all destinations |
+**Rola:** gracz ucząca się DevSecOps
+**Potrzeba:** rozegrać sesję trybu Shift Left ze strefami Development/Production
+**Cel:** zrozumieć, dlaczego wcześniejsze wykrycie luk (przed produkcją) zmniejsza ryzyko
 
-**Acceptance criteria:** each PC card's detail view includes a visible "How KotlinGuard defends against this" panel linking to the actual design decision.
+### Kryteria akceptacji (FR-13)
+- Nowo dobrany komponent trafia najpierw do strefy Development — nie może być zaatakowany
+- Na początku kolejnej tury komponenty z Development przenoszą się do Production
+- Atak w strefie Production trafia **wszystkie** pasujące otwarte komponenty jednocześnie
+  (uszkodzenia obszarowe), nie tylko jeden
 
-```kotlin
-class Us10MobileThreatModelTest {
-    @Test
-    fun `PC2 card links to this app's own exported-component design decision`() = runTest {
-        val card = cardRepository.byCardId("PC2")
-        assertNotNull(card)
-        val selfDefense = selfDefenseRepository.forCardId("PC2")
-        assertEquals("D-02", selfDefense?.designDecisionId)
-    }
-}
+### Plan testów TDD
+```lua
+it("a component in the development zone cannot be attacked", function()
+  local session = game_modes.shift_left.new_session()
+  local component = game_modes.shift_left.draw_component(session)
+  assert.are.equal("development", component.zone)
+  game_modes.shift_left.resolve_attack(session, { stride = component.stride_open })
+  assert.are.equal(10, session.reputation) -- unchanged
+end)
 ```
 
 ---
 
-## US-11 — DevOps (DVO) + Bots (BOT)
+## US-17 — Tryb Warsztatowy Modelowania Zagrożeń (Phase 2+)
 
-| Card | English | Polish | OWASP mapping |
-|---|---|---|---|
-| DVOK | *As an Attacker, I can exploit a CI/CD pipeline that runs untrusted pull-request code with access to repository secrets, so that I can exfiltrate deployment credentials.* | *Jako atakujący, mogę wykorzystać potok CI/CD, który uruchamia niezaufany kod z pull requesta mając dostęp do sekretów repozytorium, aby wyeksfiltrować dane uwierzytelniające wdrożenia.* | CICD-SEC-4 (Poisoned Pipeline Execution) |
-| DVOQ | *As an Attacker, I can push a malicious dependency update that passes automated checks, so that it is auto-merged and deployed without human review.* | *Jako atakujący, mogę wypchnąć złośliwą aktualizację zależności, która przechodzi automatyczne kontrole, aby została automatycznie scalona i wdrożona bez przeglądu przez człowieka.* | CICD-SEC-3 (Dependency Chain Abuse) |
-| BOTK | *As an Attacker, I can deploy a botnet to perform credential stuffing against a login endpoint at high volume, so that I can identify valid account credentials from a leaked password list.* | *Jako atakujący, mogę wdrożyć botnet do przeprowadzenia credential stuffing na punkcie logowania z dużą częstotliwością, aby zidentyfikować prawidłowe dane logowania z wyciekłej listy haseł.* | OAT-008 Credential Stuffing |
-| BOTX | *As an Attacker, I can use automated scraping bots to harvest an app's entire content catalogue, so that I can republish or resell scraped data without authorization.* | *Jako atakujący, mogę użyć zautomatyzowanych botów skrobiących do zebrania całego katalogu treści aplikacji, aby ponownie opublikować lub odsprzedać zeskrobane dane bez autoryzacji.* | OAT-011 Scraping |
+**Rola:** facylitator warsztatu threat modeling w firmie
+**Potrzeba:** rozegrać sesję warsztatową na realnym diagramie systemu, bez kart komponentów
+**Cel:** wygenerować realną listę zagrożeń i mitygacji dla własnego systemu w grupie
 
-```kotlin
-@Test
-fun `DVO and BOT suits render with OWASP cross-references`() = runTest {
-    listOf("DVO", "BOT").forEach { suit ->
-        cardRepository.bySuit(suit).forEach { assertTrue(it.owaspRefs.isNotEmpty()) }
-    }
-}
-```
+### Kryteria akceptacji (FR-14)
+- Karty Attack i Protection są rozdzielane równo między graczy — karty Component nie są używane
+- Zagranie karty Attack na element diagramu i akceptacja grupy daje +1 punkt atakującemu
+- Kontra kartą Protection **kradnie** punkt atakującemu (atakujący traci przyznany punkt,
+  broniący zyskuje +1) — to jedyny tryb, gdzie wynik rundy może się cofnąć po przyznaniu
 
 ---
 
-## US-12 — Website App Cornucopia (VE/AT/SM/AZ/CR/C)
+## US-18 — Eksport do CSV
 
-| Card | English | Polish | OWASP mapping |
-|---|---|---|---|
-| VE2 | *As an Attacker, I can submit unvalidated input containing SQL metacharacters through a web form, so that I can extract or modify data directly from the backing database.* | *Jako atakujący, mogę przesłać niezwalidowane dane wejściowe zawierające metaznaki SQL przez formularz internetowy, aby wydobyć lub zmodyfikować dane bezpośrednio z bazy danych.* | A03:2021 Injection |
-| VE3 | *As an Attacker, I can inject a crafted script into a comment field that is rendered unescaped to other users, so that I can execute arbitrary JavaScript in their browser session.* | *Jako atakujący, mogę wstrzyknąć spreparowany skrypt w pole komentarza, które jest renderowane bez escapowania innym użytkownikom, aby wykonać dowolny JavaScript w ich sesji przeglądarki.* | A03:2021 Injection (XSS) |
-| VE4 | *As an Attacker, I can submit an oversized or malformed file upload that the server fails to validate, so that I can trigger a denial-of-service condition or execute uploaded code.* | *Jako atakujący, mogę przesłać zbyt duży lub zniekształcony plik, którego serwer nie waliduje, aby wywołać odmowę usługi lub wykonać przesłany kod.* | A04:2021 Insecure Design |
+**Rola:** security engineer
+**Potrzeba:** wyeksportować bieżącą, przefiltrowaną listę zagrożeń do CSV
+**Cel:** dołączyć dane do raportu offline
 
-```kotlin
-@Test
-fun `website app suit VE cards map to OWASP A03 or A04`() = runTest {
-    val cards = cardRepository.bySuit("VE")
-    assertTrue(cards.all { it.owaspRefs.any { ref -> ref.startsWith("A03") || ref.startsWith("A04") } })
-}
-```
-
----
-
-## US-13 to US-16 — Code Samples in 5 Languages
-
-**Acceptance criteria:** for a representative threat (SQL Injection, A03:2021), the Code Samples panel shows one attack-demo/defense pair per language.
-
-```kotlin
-class Us13To16CodeSamplePanelTest {
-    @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
-
-    @Test
-    fun `code sample panel shows tabs for all five languages`() {
-        navigateToThreat(composeRule, "A03:2021")
-        listOf("Python", "Java", "Go", "Scala", "Lua").forEach { lang ->
-            composeRule.onNodeWithText(lang).assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun `attack demo sample requires acknowledgement dialog before code is shown`() {
-        navigateToThreat(composeRule, "A03:2021")
-        composeRule.onNodeWithText("Python").performClick()
-        composeRule.onNodeWithText("Attack Demo").performClick()
-        composeRule.onNodeWithTag("AttackDemoWarningDialog").assertIsDisplayed()
-        composeRule.onNodeWithText("I Understand").performClick()
-        composeRule.onNodeWithTag("CodeBlock").assertIsDisplayed()
-    }
-}
-```
-
----
-
-## US-17 — Search
-
-```kotlin
-class SearchRepositoryTest {
-    @Test
-    fun `searching prompt injection in Polish returns LLM01 threat`() = runTest {
-        val results = searchRepository.query("wstrzykiwanie promptu", AppLocale.PL)
-        assertTrue(results.any { it.code == "LLM01:2025" })
-    }
-}
-```
-
----
-
-## US-18 — Export via Native Share Sheet
-
-```kotlin
-class ExportServiceTest {
-    @Test
-    fun `exportCsv produces a content uri shareable via FileProvider`() = runTest {
-        val uri = exportService.exportCsv(ThreatFilter(severity = Severity.CRITICAL))
-        assertEquals("content", uri.scheme)
-        assertTrue(contentResolver.openInputStream(uri)!!.readBytes().isNotEmpty())
-    }
-}
-```
-
----
-
-## US-19 — Digital-by-Default Harms Deck (`dbd-cards-1.0-en.yaml`)
-
-**Real card content, translated to Polish:**
-
-| Card | English | Polish | OWASP mapping |
-|---|---|---|---|
-| SCO2 | *As a Public Service Designer, I can mandate an online-only application channel without a supported offline alternative, so that citizens without reliable internet access or digital literacy are structurally excluded from the service.* | *Jako projektant usługi publicznej, mogę narzucić kanał składania wniosków wyłącznie online, bez wspieranej alternatywy offline, przez co obywatele bez niezawodnego dostępu do internetu lub umiejętności cyfrowych są strukturalnie wykluczeni z usługi.* | A04:2021 Insecure Design |
-| SCO3 | *As a Public Service Designer, I can require a smartphone-only authentication app for benefit access with no alternative verification path, so that elderly or low-income users without a compatible device cannot access their entitlements.* | *Jako projektant usługi publicznej, mogę wymagać aplikacji uwierzytelniającej działającej wyłącznie na smartfonie, bez alternatywnej ścieżki weryfikacji, przez co starsi lub ubożsi użytkownicy bez odpowiedniego urządzenia nie mogą uzyskać dostępu do swoich świadczeń.* | A04:2021 Insecure Design |
-| SCO4 | *As a Public Service Designer, I can set a form timeout too short for a user relying on assistive technology to complete, so that users with disabilities are systematically unable to finish their application.* | *Jako projektant usługi publicznej, mogę ustawić czas wypełniania formularza zbyt krótki dla użytkownika korzystającego z technologii wspomagających, przez co osoby z niepełnosprawnościami systematycznie nie są w stanie ukończyć wniosku.* | A04:2021 Insecure Design |
-| ARC2 | *As a System Architect, I can design an eligibility-determination algorithm with no human review step, so that an incorrect automated denial cannot be caught or appealed before harm occurs.* | *Jako architekt systemu, mogę zaprojektować algorytm ustalania uprawnień bez etapu przeglądu przez człowieka, przez co błędna automatyczna odmowa nie może zostać wychwycona ani zaskarżona przed wystąpieniem szkody.* | A04:2021 Insecure Design |
-| ARC3 | *As a System Architect, I can integrate a third-party risk-scoring model into a benefits system without documenting its decision logic, so that affected citizens cannot understand or challenge decisions made about them.* | *Jako architekt systemu, mogę zintegrować model oceny ryzyka firmy trzeciej z systemem świadczeń bez dokumentowania jego logiki decyzyjnej, przez co dotknięci obywatele nie mogą zrozumieć ani zakwestionować podjętych wobec nich decyzji.* | A04:2021 Insecure Design |
-
-**Why these are structurally distinct from every other deck in this app:** these cards describe **design and policy harms**, not exploitable technical vulnerabilities — there is no "patch" for SCO2 in the way there is a patch for a SQL injection flaw. This is precisely what `CardKind.DesignHarm` (D-03) encodes: these cards **cannot** carry a `Severity`, because "severity" implies a technical risk-scoring frame that does not fit an exclusion-by-design harm.
-
-**Acceptance criteria:**
-1. The Digital-by-Default Harms screen is visually and structurally separate from every technical-vulnerability screen (distinct color treatment, a `DesignHarmBadge`, no "Severity" field displayed anywhere on the card).
-2. Every card in this deck decodes to `CardKind.DesignHarm`.
-3. Attempting to read a `Severity` from a `DesignHarm` card is a **compile error** at every call site (D-03) — enforced by the Kotlin compiler, not a runtime check.
-4. Each card cross-references OWASP A04:2021.
-
-```kotlin
-// data/src/test/kotlin/.../DigitalHarmsDecoderTest.kt
-class DigitalHarmsDecoderTest {
-    @Test
-    fun `dbd deck decodes all cards as CardKind DesignHarm with no severity`() {
-        val cards = CardFileDecoders.decodeDbd(loadAsset("cornucopia/dbd-cards-1.0-en.yaml"))
-        assertTrue(cards.isNotEmpty())
-        cards.forEach { card ->
-            assertEquals(CardKind.DesignHarm, card.kind)
-            assertTrue(card.owaspRefs.contains("A04:2021"))
-        }
-    }
-}
-
-// Kotest property test — the KEY guarantee for this user story
-class CardKindExhaustivenessPropertyTest : StringSpec({
-    "severityOf is total: every CardKind value produces a defined result, DesignHarm always null" {
-        checkAll(Arb.severityEnum(), Arb.boolean()) { severity, isDesignHarm ->
-            val kind: CardKind = if (isDesignHarm) CardKind.DesignHarm else CardKind.TechnicalThreat(severity)
-            val result = severityOf(kind) // the `when` expression from PLAN.md D-03
-            if (isDesignHarm) result == null else result == severity
-        }
-    }
-})
-
-// app/src/androidTest/kotlin/.../Us19DigitalHarmsTest.kt
-class Us19DigitalHarmsTest {
-    @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
-
-    @Test
-    fun `digital harms screen shows design-harm badge and no severity chip`() {
-        composeRule.onNodeWithText("Digital-by-Default Harms").performClick()
-        composeRule.onNodeWithTag("DesignHarmBadge").assertIsDisplayed()
-        composeRule.onAllNodesWithTag("SeverityChip").assertCountEquals(0)
-    }
-
-    @Test
-    fun `SCO2 card cross-references A04 2021`() {
-        composeRule.onNodeWithText("Digital-by-Default Harms").performClick()
-        composeRule.onNodeWithText("SCO2").performClick()
-        composeRule.onNodeWithText("A04:2021", substring = true).assertIsDisplayed()
-    }
-}
-```
-
-**A compile-time note worth stating explicitly for the course:** unlike a unit test, which can only prove the tested cases behave correctly, `CardKindExhaustivenessPropertyTest` above is almost redundant with the compiler's own guarantee — if `severityOf` ever failed to handle a `CardKind` variant, the project would not compile at all, since `when` is used as an expression with no `else`. The property test is retained anyway (a) as living documentation of the contract, and (b) to catch a regression if a future refactor changes `severityOf` to a `when` **statement** or reintroduces an `else` branch — the one way this guarantee can be silently defeated (see `PLAN.md` D-03 caveat and Risk Register §13).
-
----
-
-## Podsumowanie planu testów (Test Plan Summary)
-
-| Kategoria | Liczba testów (przybliżona) |
-|---|---|
-| Testy jednostkowe (JUnit 5, `:data`) | ~95 |
-| Testy właściwości (Kotest property) | ~20 |
-| Testy UI (Compose UI Testing, `:app/androidTest`) | ~55 (jeden zestaw na każdą z 19 historyjek użytkownika, plus warianty PL/EN) |
-| **Razem** | **~170** |
-
-**Cel pokrycia:** ≥ 85% pokrycia instrukcji w module `:data` (NFR-07); ≥ 90% z powyższej listy przechodzące w CI przed oznaczeniem kamienia milowego jako ukończonego (`PLAN.md` §16).
-
-**Kolejność wykonania w CI:**
-1. `./gradlew :data:testDebugUnitTest` (JUnit 5 + Kotest, szybkie, brak emulatora)
-2. `./gradlew detekt lintDebug` (SAST)
-3. `./gradlew dependencyCheckAnalyze` (SCA)
-4. `./gradlew :app:connectedDebugAndroidTest` (Compose UI Testing na emulatorze/urządzeniu w CI)
-5. Build release + weryfikacja R8
-
-**Pliki testów E2E (Compose UI Testing), po jednym na historyjkę:**
-`Us01FrameworkListTest.kt` … `Us19DigitalHarmsTest.kt` (19 plików), plus `LocaleToggleE2ETest.kt` weryfikujący przełącznik PL/EN na reprezentatywnym podzbiorze ekranów.
-
-**Tabela przypadków nadużyć (Abuse Cases) zweryfikowanych testami:**
-
-| AC ID | Pokryty przez |
-|---|---|
-| AC-01 | Manualny przegląd `AndroidManifest.xml` + Android Lint `ExportedContentQuery` (SR-01) |
-| AC-02 | `detekt` custom rule + `Us19`/deck decoder tests asserting `ignoreUnknownKeys == false` |
-| AC-03 | `CardKindExhaustivenessPropertyTest` + kompilator Kotlina (D-03) |
-| AC-04 | Manualna weryfikacja `allowBackup=false` w konfiguracji release |
-| AC-05 | `detekt` custom rule zakazująca `rawQuery` poza udokumentowanym wyjątkiem |
-| AC-06 | `Us13To16CodeSamplePanelTest` (dialog potwierdzenia) |
-| AC-07 | `dependencyCheckAnalyze` w CI |
-| AC-08 | CODEOWNERS + `IntegrityChecker` hash-mismatch test |
+### Kryteria akceptacji
+- `GET /api/v1/export.csv` zwraca `Content-Type: text/csv`, respektuje te same parametry
+  filtrowania co `/api/v1/threats`
+- Eksport jest generowany synchronicznie w ramach żądania — brak endpointu do pollingu, w
+  przeciwieństwie do asynchronicznego eksportu WP-Cron w `app09_php_WORDPRESS`
