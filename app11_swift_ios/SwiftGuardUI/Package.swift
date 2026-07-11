@@ -18,7 +18,12 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftGuardUITests_Unit",
-            dependencies: ["SwiftGuardUI"]
+            // "SwiftGuardData" is listed explicitly (not just transitively via
+            // "SwiftGuardUI") because SPM does not re-export a dependency's own
+            // dependencies to a target that merely depends on it — this test
+            // target constructs `Framework`/`Threat`/etc. `@Model` fixtures
+            // directly, so it needs its own explicit access.
+            dependencies: ["SwiftGuardUI", "SwiftGuardData"]
         )
     ]
 )

@@ -85,11 +85,22 @@ class CardLoader(
         val translationsText = assetSource.readText("cornucopia/translations/pl.cards.json")
         val translations = if (translationsText != null) CurationFileLoader.loadTranslations(translationsText) else emptyMap()
 
-        return rawCards.map { (card, suitCode, suitName) ->
+        return rawCards.mapNotNull { (card, suitCode, suitName) ->
             buildSeed(card, suitCode, suitName, entry, curation[card.id], translations[card.id])
         }
     }
 
+    /**
+     * Content-scope note (PLAN.md §0.1 / CLAUDE.md): every deck ships far
+     * more raw cards than are curated (e.g. the real `webapp` deck has 80
+     * raw cards but only a representative 14 are curated). A card with NO
+     * curation entry at all is skipped here (`null`) — the expected, common
+     * case, not an error. A card that DOES have a curation entry but an
+     * invalid/malformed `severity` string is a real data bug in the curation
+     * file and still throws `MissingCuratedSeverity` — these are two
+     * different failure modes and must not be conflated, or every uncurated
+     * card would abort the entire deck's ingestion.
+     */
     private fun buildSeed(
         card: RawCard,
         suitCode: String,
@@ -97,11 +108,12 @@ class CardLoader(
         manifestEntry: DeckManifestEntry,
         curationEntry: CurationEntry?,
         translation: String?
-    ): CardSeed {
+    ): CardSeed? {
         val kind: CardKind = if (manifestEntry.isDesignHarmDeck) {
             CardKind.DesignHarm
         } else {
-            val severityString = curationEntry?.severity
+            if (curationEntry == null) return null
+            val severityString = curationEntry.severity
                 ?: throw CardDecodeError.MissingCuratedSeverity(card.id)
             val severity = Severity.entries.find { it.name.equals(severityString, ignoreCase = true) }
                 ?: throw CardDecodeError.MissingCuratedSeverity(card.id)

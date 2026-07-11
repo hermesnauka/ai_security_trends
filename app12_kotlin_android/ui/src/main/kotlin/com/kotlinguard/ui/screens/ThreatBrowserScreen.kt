@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,7 +70,8 @@ fun ThreatBrowserScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onThreatSelected(threat.code) }
-                            .padding(16.dp),
+                            .padding(16.dp)
+                            .testTag("threat-row-${threat.code}"),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {

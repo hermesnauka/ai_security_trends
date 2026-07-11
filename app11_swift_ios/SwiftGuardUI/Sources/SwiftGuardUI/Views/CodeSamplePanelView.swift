@@ -45,6 +45,7 @@ struct CodeSamplePanelView: View {
                     }
                     pendingAttackDemo = nil
                 }
+                .accessibilityIdentifier("attack-demo-confirm-button")
                 Button("Anuluj", role: .cancel) { pendingAttackDemo = nil }
             }
         }
@@ -76,12 +77,14 @@ struct CodeSamplePanelView: View {
 
             if revealedAttackDemoIDs.contains(sample.persistentModelID) {
                 codeBlock(sample)
+                    .accessibilityIdentifier("attack-demo-code-body")
             } else {
                 Button("Pokaż kod (VULNERABLE)") {
                     pendingAttackDemo = sample
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
+                .accessibilityIdentifier("attack-demo-reveal-button")
             }
         }
         .padding(8)

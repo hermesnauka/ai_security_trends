@@ -38,6 +38,7 @@ public struct ThreatBrowserView: View {
                             Text(threat.title).font(.headline)
                         }
                     }
+                    .accessibilityIdentifier("threat-row-\(threat.code)")
                 }
 
                 if viewModel.threats.isEmpty {

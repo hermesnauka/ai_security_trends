@@ -38,7 +38,7 @@ class ThreatDetailViewModelFactory(
             dataContainer.threatRepository,
             dataContainer.mitigationRepository,
             dataContainer.bookmarkRepository,
-            dataContainer,
+            dataContainer.codeSampleRepository,
             threatCode
         ) as T
 }

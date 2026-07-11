@@ -7,11 +7,13 @@ import com.kotlinguard.data.db.KotlinGuardDatabase
 import com.kotlinguard.data.integrity.IntegrityChecker
 import com.kotlinguard.data.repository.BookmarkRepository
 import com.kotlinguard.data.repository.CardRepository
+import com.kotlinguard.data.repository.CodeSampleRepository
 import com.kotlinguard.data.repository.FrameworkRepository
 import com.kotlinguard.data.repository.MatrixRepository
 import com.kotlinguard.data.repository.MitigationRepository
 import com.kotlinguard.data.repository.RoomBookmarkRepository
 import com.kotlinguard.data.repository.RoomCardRepository
+import com.kotlinguard.data.repository.RoomCodeSampleRepository
 import com.kotlinguard.data.repository.RoomFrameworkRepository
 import com.kotlinguard.data.repository.RoomMatrixRepository
 import com.kotlinguard.data.repository.RoomMitigationRepository
@@ -44,6 +46,7 @@ class DataContainer(context: Context) {
     val bookmarkRepository: BookmarkRepository = RoomBookmarkRepository(database.bookmarkDao())
     val searchRepository: SearchRepository = RoomSearchRepository(database.threatDao(), database.cardDao())
     val matrixRepository: MatrixRepository = RoomMatrixRepository(frameworkRepository, threatRepository, cardRepository)
+    val codeSampleRepository: CodeSampleRepository = RoomCodeSampleRepository(database.codeSampleDao())
 
     private val integrityChecker = IntegrityChecker(assetSource, database.contentHashDao())
 
@@ -57,6 +60,4 @@ class DataContainer(context: Context) {
         crossReferenceDao = database.crossReferenceDao(),
         integrityChecker = integrityChecker
     )
-
-    suspend fun codeSamplesFor(mitigationSlug: String) = database.codeSampleDao().forMitigation(mitigationSlug)
 }

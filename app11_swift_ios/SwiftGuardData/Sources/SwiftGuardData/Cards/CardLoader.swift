@@ -90,7 +90,7 @@ public struct CardLoader: Sendable {
             translations = try CurationFileLoader.loadTranslations(from: translationsUrl)
         }
 
-        return try rawCards.map { entryTuple in
+        return try rawCards.compactMap { entryTuple in
             try buildSeed(
                 card: entryTuple.card,
                 suitCode: entryTuple.suitCode,
@@ -102,6 +102,16 @@ public struct CardLoader: Sendable {
         }
     }
 
+    /// Content-scope note (PLAN.md §0.1 / CLAUDE.md): every deck ships far
+    /// more raw cards than are curated (e.g. the real `webapp` deck has 80
+    /// raw cards but only a representative 14 are curated). A card with NO
+    /// curation entry at all is silently skipped here (`nil`) — that's the
+    /// expected, common case, not an error. A card that DOES have a curation
+    /// entry but an invalid/malformed `severity` string is a real data bug in
+    /// the curation file and still throws `.missingCuratedSeverity` — these
+    /// are two different failure modes and must not be conflated into one
+    /// `guard`, or every uncurated card would abort the entire deck's
+    /// ingestion (the bug this comment replaced).
     private func buildSeed(
         card: RawCard,
         suitCode: String,
@@ -109,12 +119,15 @@ public struct CardLoader: Sendable {
         manifestEntry: DeckManifestEntry,
         curationEntry: CurationEntry?,
         translation: String?
-    ) throws -> CardSeed {
+    ) throws -> CardSeed? {
         let kind: CardKind
         if manifestEntry.isDesignHarmDeck {
             kind = .designHarm
         } else {
-            guard let severityString = curationEntry?.severity, let severity = Severity(rawValue: severityString) else {
+            guard let curationEntry else {
+                return nil
+            }
+            guard let severityString = curationEntry.severity, let severity = Severity(rawValue: severityString) else {
                 throw CardDecodeError.missingCuratedSeverity(cardId: card.id)
             }
             kind = .technicalThreat(severity: severity)

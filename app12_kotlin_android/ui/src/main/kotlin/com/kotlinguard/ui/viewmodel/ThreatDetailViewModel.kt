@@ -5,12 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kotlinguard.data.di.DataContainer
 import com.kotlinguard.data.model.CodeSampleEntity
 import com.kotlinguard.data.model.CrossReferenceEntity
 import com.kotlinguard.data.model.MitigationEntity
 import com.kotlinguard.data.model.ThreatEntity
 import com.kotlinguard.data.repository.BookmarkRepository
+import com.kotlinguard.data.repository.CodeSampleRepository
 import com.kotlinguard.data.repository.MitigationRepository
 import com.kotlinguard.data.repository.ThreatRepository
 import kotlinx.coroutines.launch
@@ -19,7 +19,7 @@ class ThreatDetailViewModel(
     private val threatRepository: ThreatRepository,
     private val mitigationRepository: MitigationRepository,
     private val bookmarkRepository: BookmarkRepository,
-    private val dataContainer: DataContainer,
+    private val codeSampleRepository: CodeSampleRepository,
     private val threatCode: String
 ) : ViewModel() {
     var threat by mutableStateOf<ThreatEntity?>(null)
@@ -49,9 +49,9 @@ class ThreatDetailViewModel(
             mitigations = mitigationRepository.forThreat(threatCode)
             crossReferences = threatRepository.crossReferences(threatCode)
             codeSamplesByMitigation = mitigations.associate { m ->
-                m.slug to dataContainer.codeSamplesFor(m.slug)
+                m.slug to codeSampleRepository.forMitigation(m.slug)
             }
-            isBookmarked = dataContainer.bookmarkRepository.list().any { it.threatOrCardCode == threatCode }
+            isBookmarked = bookmarkRepository.list().any { it.threatOrCardCode == threatCode }
         }
     }
 

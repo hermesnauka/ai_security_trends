@@ -22,6 +22,18 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // Room fundamentally needs an Android runtime (unlike SwiftData, a pure
+    // Swift/Foundation library app11_swift_ios's equivalent tests run under
+    // plain `swift test`) — `isIncludeAndroidResources` is required for
+    // Robolectric to resolve the module's manifest/resources from a plain
+    // JVM unit test, no emulator/device involved.
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -36,8 +48,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.charleskorn.kaml:kaml:0.61.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
-    testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
-    testImplementation("io.kotest:kotest-property:5.9.1")
+    // JUnit4, not JUnit5 — Robolectric's `@RunWith(RobolectricTestRunner::class)`
+    // is a JUnit4 `Runner`; this is Robolectric's canonical, officially
+    // supported integration, so pure-logic tests (no Room) and Room-backed
+    // tests (Robolectric) share one consistent test framework rather than
+    // mixing JUnit4 and JUnit5 in the same module.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("androidx.room:room-testing:2.6.1")
+    // Used as a plain library (`Arb`/`checkAll` inside ordinary JUnit4 `@Test`
+    // methods), not via Kotest's own Spec/JUnit5 runner — see
+    // `CodeSampleCompletenessPropertyTest.kt`.
+    testImplementation("io.kotest:kotest-property:5.9.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

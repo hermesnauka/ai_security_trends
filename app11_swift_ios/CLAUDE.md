@@ -58,24 +58,74 @@ have one) — each with a real attack-demo + defense code sample in Python/Java/
 Lua. Every other framework family (Agentic AI, API, Client-Side, CI/CD, OAT, MASVS) exists
 as a catalogue row with no seeded threats yet.
 
+**The test suite is now real** (previously both `SwiftGuardTests`/`SwiftGuardUITests` were
+empty directories):
+
+- **`SwiftGuardData/Tests/SwiftGuardDataTests/`** (package-level, runnable via `swift test`
+  alone — no Xcode/simulator needed at all): `TestSupport.inMemoryContainer(seeded:)` seeds
+  from the REAL bundled content, not a synthetic duplicate — every item under
+  `Tests/SwiftGuardDataTests/` (`Cornucopia/`, `frameworks.json`, etc.) is a **symlink**
+  into `../../SwiftGuardApp/Resources`, copied into the test bundle at build time via
+  `Package.swift`'s `resources:` list, so `Bundle.module` sees the exact same files
+  `SwiftGuardApp` would. Covers: `CardKind` (D-03), `Hashing` (real SHA-256 vectors),
+  `CardFile`/raw-YAML decoding (D-06 unknown-key rejection at every nesting level),
+  `CurationFileLoader` (`_comment` filtering), `ReferenceValidator` (real allowlists),
+  `CardLoader` (real 6-deck `loadAll()`, plus fixture-based negative cases via a
+  `Bundle(url:)`-backed temp-directory bundle), `IntegrityService` (real hashes all valid,
+  upsert-not-duplicate), `ContentSeeder` end to end (realistic counts: ≥10 frameworks, 20
+  threats, 5 mitigations, idempotent re-seed), all 7 repository implementations, and 2
+  `SwiftCheck` property tests (every seeded mitigation has all 5 languages, each with both
+  an attack-demo and a defense sample) — `Package.swift` adds `SwiftCheck` and `Yams` as
+  test-target dependencies for this.
+  - **A real bug was caught and fixed while writing these tests**: `CardLoader.buildSeed`
+    used to `throw .missingCuratedSeverity` for ANY card with no curation entry at all —
+    since only a representative slice of each deck is curated (e.g. the real `webapp` deck
+    has 80 raw cards but only 14 curated), this meant `ContentSeeder.seedIfNeeded()` would
+    have crashed immediately if ever actually run. Fixed so an uncurated card is silently
+    skipped (the common, expected case) while a curated-but-malformed-severity entry still
+    throws (a real data bug, correctly still fatal) — see the doc comment on
+    `CardLoader.buildSeed`. The identical bug was also fixed in `app12_kotlin_android`'s
+    Kotlin port of this same loader.
+- **`SwiftGuardUI/Tests/SwiftGuardUITests_Unit/`** (package-level): `LocalizationManager`
+  (locale switching, invalid-code fallback), and all 5 `ViewModel`s against a small
+  hand-inserted in-memory dataset (no bundle needed) — including an `async` test proving
+  `ThreatBrowserViewModel.searchText`'s ~300ms debounce genuinely delays filtering while
+  `severityChanged()` applies immediately.
+- **Top-level `SwiftGuardTests/`** (app-target, PLAN.md §9's "XCTest + SwiftCheck on
+  SwiftGuardData") is deliberately left empty: the package-level `SwiftGuardDataTests`
+  above already covers everything that role would, via the resource-symlink trick, and
+  running entirely through `swift test` is strictly more portable than requiring the
+  (still-nonexistent) Xcode project — don't fill this in as a redundant duplicate.
+- **Top-level `SwiftGuardUITests/`** has 2 representative `XCUITest` files
+  (`US01FrameworksUITests.swift`, `US03ThreatDetailUITests.swift`) — real source,
+  consistent with real `.accessibilityIdentifier` values now added to
+  `RootView`/`FrameworkListView`/`ThreatBrowserView`/`CodeSamplePanelView` specifically for
+  this (English, stable identifiers, deliberately decoupled from the visible Polish
+  labels). The other 17 user stories' XCUITest files are not written yet — same
+  representative-slice pattern as the content scope above, not an oversight.
+- **Still blocked on the missing `.xcodeproj`**: none of the above can actually execute end
+  to end as "launch the real app and drive its UI" until someone creates the Xcode project
+  (see below) — `swift test` on the two SPM packages is the only thing runnable today.
+
 **Not built at all:**
 - **No `.xcodeproj` exists.** Unlike everything else in this repo, a `project.pbxproj` is
   fragile to hand-author correctly without Xcode itself actually generating it — this was
   deliberately not attempted. Someone needs to open Xcode, create a new iOS App project
   targeting iOS 17+, add `SwiftGuardData`/`SwiftGuardUI` as local Swift Package
-  dependencies, add `SwiftGuardApp.swift` and `Resources/` to the app target, and wire up
-  the entitlements file (`com.apple.developer.icloud-services` only, per D-01 — nothing
-  else, not even if Xcode's project wizard defaults add more).
+  dependencies, add `SwiftGuardApp.swift` and `Resources/` to the app target, wire up
+  `SwiftGuardUITests` as a real UI test target, and wire up the entitlements file
+  (`com.apple.developer.icloud-services` only, per D-01 — nothing else, not even if
+  Xcode's project wizard defaults add more).
 - **Nothing has been compiled.** No Swift toolchain exists in the environment this was
   written in — every file here is real, structurally-checked-by-hand Swift (brace-balanced,
-  cross-referenced for dangling type names), but none of it has been run through `swiftc`
-  or Xcode. Treat it the same as app09's Docker Compose files: unverified-but-real source.
+  cross-referenced for dangling type names), but none of it has been run through `swiftc`,
+  `swift test`, or Xcode. Treat it the same as app09's Docker Compose files:
+  unverified-but-real source — including the test suite itself.
 - `SyncCoordinator`/CloudKit sync (D-07), `BGAppRefreshTask` periodic re-verification,
   export (`.fileExporter`/`UIActivityViewController`), the MITRE ATLAS kill-chain
   `Canvas`/`Chart` timeline, matrix/heatmap Views (the `SwiftDataMatrixRepository` backing
   them exists in `SwiftGuardData`, but no `MatrixLlmView`/`StrideHeatmapView`/etc. consume
-  it yet), `SwiftLint` config, and the entire test suite (`SwiftGuardTests`,
-  `SwiftGuardUITests` are both still empty directories).
+  it yet), `SwiftLint` config, and 17 of the 19 planned per-user-story XCUITest files.
 
 ## Architecture decisions to know before writing more code (see `PLAN.md` §2–§5)
 

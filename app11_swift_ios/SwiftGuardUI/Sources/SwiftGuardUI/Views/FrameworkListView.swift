@@ -18,6 +18,7 @@ public struct FrameworkListView: View {
                         Text(framework.frameworkDescription).font(.subheadline).lineLimit(2)
                     }
                 }
+                .accessibilityIdentifier("framework-row-\(framework.code)")
             }
             .navigationTitle("Frameworki Bezpieczeństwa")
             .navigationDestination(for: String.self) { frameworkCode in

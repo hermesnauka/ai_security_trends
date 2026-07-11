@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,10 @@ fun CodeSamplePanel(
             title = { Text("Ten kod celowo demonstruje podatność. / This code deliberately demonstrates a vulnerability.") },
             text = { Text("Potwierdź, aby go zobaczyć. / Confirm to view it.") },
             confirmButton = {
-                TextButton(onClick = { onReveal(sample.id); pendingAttackDemo = null }) { Text("Rozumiem / I understand") }
+                TextButton(
+                    onClick = { onReveal(sample.id); pendingAttackDemo = null },
+                    modifier = Modifier.testTag("attack-demo-confirm-button")
+                ) { Text("Rozumiem / I understand") }
             },
             dismissButton = {
                 TextButton(onClick = { pendingAttackDemo = null }) { Text("Anuluj / Cancel") }
@@ -95,8 +99,8 @@ fun CodeSamplePanel(
 }
 
 @Composable
-private fun CodeBlock(sample: CodeSampleEntity) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+private fun CodeBlock(sample: CodeSampleEntity, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(vertical = 4.dp)) {
         Text(sample.title, fontWeight = FontWeight.Bold)
         Text(
             sample.code,
@@ -119,12 +123,13 @@ private fun AttackDemoBlock(sample: CodeSampleEntity, revealed: Boolean, onReque
     ) {
         Text("ATTACK DEMO — kod podatny, nie używać w produkcji", color = Color.Red, fontWeight = FontWeight.Bold)
         if (revealed) {
-            CodeBlock(sample)
+            CodeBlock(sample, modifier = Modifier.testTag("attack-demo-code-body"))
         } else {
             OutlinedButton(
                 onClick = onRequestReveal,
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                border = BorderStroke(1.dp, Color.Red)
+                border = BorderStroke(1.dp, Color.Red),
+                modifier = Modifier.testTag("attack-demo-reveal-button")
             ) {
                 Text("Pokaż kod (VULNERABLE)")
             }

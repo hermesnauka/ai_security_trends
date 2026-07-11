@@ -41,4 +41,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // ViewModels depend only on the `:data` Repository INTERFACES, so these
+    // are tested against fake, hand-written in-memory implementations —
+    // no Room, no Robolectric, no Android runtime needed at all for this
+    // module's tests, unlike `:data`'s own Room-backed test suite.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

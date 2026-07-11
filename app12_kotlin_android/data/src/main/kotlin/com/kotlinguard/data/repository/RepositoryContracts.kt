@@ -1,6 +1,7 @@
 package com.kotlinguard.data.repository
 
 import com.kotlinguard.data.model.BookmarkEntity
+import com.kotlinguard.data.model.CodeSampleEntity
 import com.kotlinguard.data.model.CornucopiaCardEntity
 import com.kotlinguard.data.model.CrossReferenceEntity
 import com.kotlinguard.data.model.FrameworkEntity
@@ -67,6 +68,16 @@ interface CardRepository {
 interface MitigationRepository {
     suspend fun forThreat(code: String): List<MitigationEntity>
     suspend fun forCard(cardId: String): List<MitigationEntity>
+}
+
+/**
+ * Room entities have no live relationship traversal the way SwiftData's
+ * `Mitigation.codeSamples` does — this is the abstraction that gap needs.
+ * `ThreatDetailViewModel` depends on this interface (not the concrete
+ * `DataContainer`), so it can be unit-tested against a fake.
+ */
+interface CodeSampleRepository {
+    suspend fun forMitigation(slug: String): List<CodeSampleEntity>
 }
 
 interface MatrixRepository {

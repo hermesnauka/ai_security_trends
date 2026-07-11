@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.testTag
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -48,6 +49,10 @@ fun RootScreen(factory: ViewModelFactory, dataContainer: DataContainer) {
             NavigationBar {
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = backStackEntry?.destination
+                // Stable, English, test-only tags — deliberately separate from
+                // the visible Polish labels, so Compose UI tests (see
+                // `app/src/androidTest/`) don't break every time a display
+                // string changes or gets translated.
                 tabs.forEach { tab ->
                     NavigationBarItem(
                         icon = { Icon(tab.icon, contentDescription = tab.label) },
@@ -59,7 +64,8 @@ fun RootScreen(factory: ViewModelFactory, dataContainer: DataContainer) {
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        modifier = androidx.compose.ui.Modifier.testTag("tab-${tab.route}")
                     )
                 }
             }
