@@ -1,13 +1,20 @@
 # SwiftGuard 2026 — native iOS implementation (app11_swift_ios)
 
-Pure native iOS: Swift 6, SwiftUI, SwiftData. No code exists yet — no Xcode
-project, no `.swift` files, nothing scaffolded. This directory currently holds
-only `PLAN.md`, `requirements.md`, `SDLC_analysis.md`, and
-`user_stories+tests.md`, describing a large aspirational 19-user-story end
-state (§15 of `PLAN.md`). Building from scratch starts with `xcodegen`/Xcode's
-"New Project", not by editing existing sources. See `../CLAUDE.md` for the
-sibling list — this app is one of the two (with `app12_kotlin_android`) that
-deliberately don't follow the shared API contract documented there.
+Pure native iOS: Swift 6, SwiftUI, SwiftData. **Nothing is built yet** — no
+Xcode project, no `.swift` files, no packages, nothing scaffolded. This
+directory currently holds only four planning documents — `PLAN.md`,
+`requirements.md`, `SDLC_analysis.md`, `user_stories+tests.md` — plus a
+generic (Java/Python-oriented) `.gitignore` that hasn't been adapted for
+Swift/Xcode yet. They describe a large aspirational 19-user-story end state
+(§15 of `PLAN.md`). Whoever starts coding here is scaffolding from zero, not
+extending existing sources — don't assume any file or package mentioned below
+already exists; check first. `PLAN.md` §9 has the target directory layout;
+start there (Xcode's "New Project" or `xcodegen`, then the two local Swift
+packages).
+
+See `../CLAUDE.md` for the sibling list — this app is one of the two (with
+`app12_kotlin_android`, its structural twin) that deliberately don't follow
+the shared API contract documented there.
 
 ## This is NOT a client of app01's REST API — don't build an API client
 
@@ -40,9 +47,11 @@ Do not attempt to point this app at app01's `/api/v1/frameworks` or
   in this codebase, so SQL injection isn't a class this app needs to defend
   against at all.
 - **Two local Swift packages**: `SwiftGuardData` (models, `ContentSeeder`,
-  `IntegrityService`) and `SwiftGuardUI` (Views, ViewModels) — the package
-  boundary is what gives Swift's `internal` access control real cross-target
-  teeth (D-02), since a single app target has no such boundary on its own.
+  `IntegrityService`, `SyncCoordinator`) and `SwiftGuardUI` (Views,
+  ViewModels, `LocalizationManager`), composed by a thin `SwiftGuardApp` app
+  target — the package boundary is what gives Swift's `internal` access
+  control real cross-target teeth (D-02), since a single app target has no
+  such boundary on its own. Full tree: `PLAN.md` §9.
 - **`Codable` gotcha (D-06)**: Swift's synthesized `Decodable` **silently
   ignores unrecognized JSON/YAML keys by default** — the opposite default
   from `app10_csharp_react`'s `YamlDotNet` (which rejects unknown fields

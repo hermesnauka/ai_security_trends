@@ -1,15 +1,35 @@
 # HaskShield 2026 — Haskell/servant implementation (app06_HASKELL_react)
 
-The Haskell implementation: `servant` + `hasql` backend, React/TS frontend. See
-`backend/CLAUDE.md` and `frontend/CLAUDE.md` for stack-specific detail, and
-`../CLAUDE.md` for the sibling list, canonical API contract, and shared
-local-dev setup.
+The Haskell implementation: `servant` + `hasql` backend, Vite/React/TS
+frontend. Both backend and frontend are built and functional (Phase-1 scope).
+See `backend/CLAUDE.md` and `frontend/CLAUDE.md` for stack-specific
+command/layout reference, and `../CLAUDE.md` for the sibling list, canonical
+API contract, and shared local-dev setup.
+
+## Current state
+
+- **Backend** (`backend/`): servant API + hasql, routes for `frameworks`,
+  `threats`, `auth/login`, `health` — see `backend/src/Api.hs` for the exact
+  route tree. Custom migration runner (`src/Migrate.hs`) applies
+  `migrations/V1__init_schema.sql` and `V2__seed_frameworks_and_threats.sql` on
+  every `cabal run api` startup (idempotent). Test suite exists
+  (`test/ServiceSpec.hs` pure/QuickCheck, `test/ApiSpec.hs` hspec-wai against a
+  real Postgres) — see `backend/CLAUDE.md` for how to run it.
+- **Frontend** (`frontend/`): Vite + React 18 + TS + Tailwind, four pages
+  (`Dashboard`, `Frameworks`, `FrameworkDetail`, `Threats`) — see
+  `frontend/CLAUDE.md`. `npm run build` and `npm run lint` are clean as of the
+  last verification recorded there. **There is no login page/UI** — the
+  `auth/login` endpoint exists on the backend but nothing in `frontend/src`
+  calls it (same gap noted for app01/app02 in `../CLAUDE.md`'s status table).
+- Only individual `backend/Dockerfile` and `frontend/Dockerfile` exist, plus
+  `nginx/nginx.conf`. **There is no `docker-compose.yml` in this app** —
+  don't assume one exists or invent commands that reference it.
 
 ## Scope: this is Phase-1 parity, not the full vision
 
 What exists today deliberately mirrors `../app01_react`'s backend, which is
 itself only a Phase-1 skeleton: frameworks + threats (read-only), one
-hardcoded admin login, 4 seeded frameworks, ~33 threats. `frontend/types/index.ts`
+hardcoded admin login, 4 seeded frameworks, ~33 threats. `frontend/src/types/index.ts`
 is written against the canonical contract's shape — don't change either side
 without checking the other.
 
@@ -49,9 +69,11 @@ project. `app01_react`'s Java/Flyway backend already owns a database named
 to avoid colliding with it — created once via `createdb -O securevision
 haskshield`. `scripts/local-dev-up.sh` already points `DB_NAME` at
 `haskshield` for this reason; don't "fix" it back to `securevision`. This is
-purely a shared-local-Postgres artifact — a real Docker Compose deployment
-gives each app its own container + volume, so `docker-compose.yml` can (and
-does) still say `securevision` without any conflict.
+purely a shared-local-Postgres artifact of this no-Docker machine — a real
+Docker Compose deployment would give each app its own container + volume with
+no such naming collision, but **no `docker-compose.yml` exists in this app
+yet** (only standalone `backend/Dockerfile` / `frontend/Dockerfile` +
+`nginx/nginx.conf`) — don't assume one does.
 
 This machine's Norton Antivirus does TLS interception (root cert:
 `C:\Users\krish\tools\norton-root.cer` / `.pem`). MSYS2's `pacman`/`curl` (bundled with

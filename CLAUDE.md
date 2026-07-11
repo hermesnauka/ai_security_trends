@@ -14,19 +14,17 @@ detail — read this file first, then that one.
 | `app01_react` | Java/Spring Boot + React | **contract of record** — backend+frontend built; no frontend login UI yet, health check is `/actuator/health` not `/health` (see below) |
 | `app02_angular` | Java/Spring Boot + Angular | backend+frontend built (independent Spring app, not shared code); same `/actuator/health` divergence as app01 |
 | `app03_python_django` | Python/Django | hybrid server-rendered + DRF API built; own contract shape, not app01's; JWT wired (simplejwt) but not enforced anywhere (`AllowAny` global default) |
-| `app04_scala_react` | Scala/ZIO + React | no `CLAUDE.md` yet |
+| `app04_scala_react` | Scala/ZIO + React | backend+frontend built; HS256, matches app01; frontend has no login/threats-list/detail pages yet (threats only reachable filtered-by-framework); zero tests despite zio-test being a declared dependency |
 | `app05_go_react` | Go (chi/pgx/sqlc) + React | backend+frontend built; **auth is RS256, a real standing deviation from app01's HS256 contract** — not a mistake to silently "fix," see below |
-| `app06_HASKELL_react` | Haskell (servant/hasql) + React | backend+frontend built |
+| `app06_HASKELL_react` | Haskell (servant/hasql) + React | backend+frontend built; HS256, matches app01; no frontend login UI yet (same gap as app01/app02); no `docker-compose.yml` (standalone Dockerfiles only) |
 | `app07_rust_react` | Rust (axum) + React | backend+frontend built; HS256, matches app01; local-dev scripts are stale leftover copies of app01's (run Maven, not Cargo) — use `docker-compose.yml` or `cargo run` directly |
 | `app08_cpp_react` | C++ (Drogon) + React | backend+frontend built; HS256, matches app01; Drogon's own async ORM used instead of the `libpqxx`/`sqlpp11` PLAN.md once proposed |
 | `app09_php_WORDPRESS` | PHP/WordPress plugin | extensive WordPress plugin scaffold built (ingestion, mitigations/code samples, i18n, search/export/matrix, full-but-unexecuted test suite) — see its own `CLAUDE.md` for the representative-slice scope of each piece |
 | `app10_csharp_react` | C#/.NET 9 + React | backend+frontend built; HS256, matches app01 |
-| `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | nothing built; no API — offline-only |
-| `app12_kotlin_android` | native Android (Compose/Room) | nothing built; no API — offline-only, structural twin of app11 |
+| `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | nothing built yet (planning docs only); no API — offline-only |
+| `app12_kotlin_android` | native Android (Compose/Room) | nothing built yet (planning docs only); no API — offline-only, structural twin of app11 |
 
-This table was last verified against each app's actual filesystem/source on 2026-07-11 (app01,
-02, 03, 05, 07, 08, 09, 10 specifically); app04/app06/app11/app12 entries are carried over
-unverified from the previous revision — check their own `CLAUDE.md` before trusting this row.
+This table was last verified against every app's actual filesystem/source on 2026-07-11.
 
 ## app01_react is the contract of record
 
