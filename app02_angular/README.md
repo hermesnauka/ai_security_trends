@@ -54,7 +54,7 @@ cd frontend && npm install && npm start
 
 **This machine specifically** has no Docker installed. `scripts/local-dev-up.sh` /
 `scripts/local-dev-down.sh` start/stop the same three pieces (Postgres, backend,
-frontend) as standalone portable installs under `C:\Users\krish\tools\` instead
+frontend) as standalone portable installs under `./tools/` instead
 of containers. Machine-specific (hardcoded tool paths) — not portable to other
 setups; use `docker compose` there instead.
 

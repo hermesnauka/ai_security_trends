@@ -42,7 +42,7 @@ command for this app; it doesn't exist here.
 ## Quick start (this machine): `scripts/local-dev-up.sh`
 
 This machine has no Docker installed, so `scripts/local-dev-up.sh` starts all three pieces
-(Postgres, backend, frontend) as standalone portable installs under `C:\Users\krish\tools\`
+(Postgres, backend, frontend) as standalone portable installs under `.\tools\`
 and `C:\ghcup\` instead of containers — **machine-specific, hardcoded tool paths, not portable
 to another setup**. (Its own header comment says "docker-compose.yml is the real, portable way
 to run this project — use it if Docker is installed" — that line is stale/aspirational; no

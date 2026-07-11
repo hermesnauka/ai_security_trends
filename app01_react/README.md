@@ -57,7 +57,7 @@ cd frontend && npm install && npm run dev
 pieces together: the shared local Postgres (if not already running), then
 backend (`mvn spring-boot:run`, waits for `:8080`), then frontend
 (`npm run dev`, waits for `:5173`) — logs land in `.local-dev/{postgres,backend,frontend}.log`.
-Machine-specific (hardcoded tool paths under `C:\Users\krish\tools\`) — not
+Machine-specific (hardcoded tool paths under `./tools/`) — not
 portable to other setups; use `docker compose` there instead.
 
 **Known issue if you use `local-dev-up.sh`:** its Postgres-provisioning step
