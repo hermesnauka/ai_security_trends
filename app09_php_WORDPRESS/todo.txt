@@ -1,42 +1,23 @@
 
+We have old and poor somethimes CLAUDE.md, and not responding to the rest of the projects.
+Do not change the projects, but change the every CLAUDE.md file corresponding to responding project.
+Verify every CLAUDE.md file and fix it for all these projects:
 
-cd /home/hermes/gitrepo/hermesnauka/ai_security_trends/app09_php_WORDPRESS
+./ai_security_trends/app01_react/CLAUDE.md
+./ai_security_trends/app02_angular/CLAUDE.md
+./ai_security_trends/app03_python_django/CLAUDE.md
+./ai_security_trends/app05_go_react/CLAUDE.md
 
+./ai_security_trends/app07_rust_react/CLAUDE.md
+./ai_security_trends/app08_cpp_react/CLAUDE.md
+./ai_security_trends/app09_php_WORDPRESS/CLAUDE.md
+./ai_security_trends/app10_csharp_react/CLAUDE.md
 
- now write another application:
- see what is in directory ./docs/*.md and ./docs/OWASP_stories/*.yaml and create for me a plan and requirements for another application
- in new directory ./app09_php_WORDPRESS
-  which show the security problems and solutions as before for OWASP MITRE ATLAS Comptia Security+ SecAI+ for 2026 now; this application have
-  to be written in WORDPRESS with php and java script (and if needed: MySQL)
-  and it must present all threats and solutions for them with
-  sample code in Python, java ecosystem, go (golang), scala and lua; make new files
-  in new directory ./app09_php_WORDPRESS ;
-  do not write an application: write only PLAN for making of application with requirements into: PLAN.md and
-  requirements.md files; An application have to have a switch for user to change the language from Polish to English and From English to Polish, and the application must be written in Polish ang English for the user.
+---
 
+./ai_security_trends/app11_swift_ios/CLAUDE.md
+./ai_security_trends/app12_kotlin_android/CLAUDE.md
 
-create a file ./app09_php_WORDPRESS/user_stories+tests.md with plan of testing of user stories with TDD aproach
-extend user stories using yaml examples in files in ./docs/OWASP_stories/*.yaml files with translating it in Polish
-and explaining what threats it cover from OWASP list
-
-now write ./app09_php_WORDPRESS/SDLC_analysis.md
-with step by step analysis of this plan and requirements in perspective of steps of SSDLC
-and SDLC process of writing a code and application:
-SDLC in cybersecurity typically refers to Secure Software Development Lifecycle (SSDLC). It is the practice of integrating security protocols, testing, and risk management into every phase of building an application. Instead of treating security as a final checklist before release, SSDLC ensures software is "secure by design".Key phases and methodologies include:Requirements & Threat Modeling: Identifying potential vulnerabilities and compliance requirements before writing code.Secure Design: Applying security architecture principles, like "least privilege".Development: Utilizing secure coding standards to prevent common pitfalls like injection flaws.Security Testing: Continuously running Static (SAST) and Dynamic (DAST) testing tools within the development pipeline.Deployment & Monitoring: Securing infrastructure configurations and maintaining runtime monitoring.For a deeper dive into incorporating these safeguards into your development workflows, you can explore the Palo Alto Networks SDLC Security Guide, the GeeksforGeeks SSDLC Overview, or the CrowdStrike SDLC Explainer.
-Considering all potential attack vectors and attack surfaces when developing software with AI and LLM models, incorporate all stages and aspects of the SDLC (Software Development Life Cycle), where the SDLC is a structured software development process. It allows development teams to design, build, test, and deploy high-quality applications while minimizing costs and risks. A standard cycle ensures that the finished product meets business requirements and stays within the allocated budget.
-The main stages of the SDLC typically include:
-Planning and Analysis: Defining goals, budget, and requirements.
-Design: Creating the system architecture and user interface.
-Implementation (Coding): The actual writing of the software.
-Testing: Verifying code quality and resolving bugs.
-Deployment: Making the application available to users.
-Maintenance: Providing technical support and updates.
-More detailed information regarding individual phases and the methodologies used (e.g., Agile, Waterfall) can be found in articles dedicated to software development stages, phases, and models.
-Focuse on agile and scrum and kanban.
-
-
-now write the application into ./app09_php_WORDPRESS/backend starting from backround
-
-now write the frontend of the application into ./app09_php_WORDPRESS/frontend
-
+./ai_security_trends/app13_ruby_FastApp/CLAUDE.md
+./ai_security_trends/app14_LUA_UNIT/CLAUDE.md
 
