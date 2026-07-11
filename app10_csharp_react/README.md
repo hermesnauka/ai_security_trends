@@ -1,5 +1,21 @@
 # SharpGuard 2026 — running backend + frontend together
 
+Only for self-educational purpose and "open" standard community and values:
+this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
+This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+
+
+## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
 See `CLAUDE.md` for architecture/design notes and `../CLAUDE.md` for the sibling-repo
 conventions this project follows. This file only covers how to actually run it.
 
@@ -9,8 +25,7 @@ option here (unlike several sibling apps) — use one of the two paths below ins
 ## Option A — this machine's Docker-less local-dev scripts
 
 Requires: a portable Postgres install, the .NET 9 SDK, and Node.js — see
-`scripts/local-dev-up.sh` for the exact tool paths this machine uses
-(`/c/Users/krish/tools/...`); adjust `PGBIN`/`PGDATA` in that script if running
+`scripts/local-dev-up.sh` for the exact tool paths this machine uses; adjust `PGBIN`/`PGDATA` in that script if running
 elsewhere.
 
 1. `cp backend/.env.example backend/.env` and fill in every value — `DB_PASSWORD`,

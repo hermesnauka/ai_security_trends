@@ -1,5 +1,21 @@
 # SwiftGuard 2026 (app11_swift_ios)
 
+Only for self-educational purpose and "open" standard community and values:
+this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
+This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+
+
+## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
 Native iOS app (Swift 6, SwiftUI, SwiftData). **There is no backend and no server to run** —
 see `../CLAUDE.md` and this directory's own `CLAUDE.md` for why: all content lives on-device,
 seeded from bundled JSON/YAML on first launch. Do not look for a `docker-compose.yml` or a

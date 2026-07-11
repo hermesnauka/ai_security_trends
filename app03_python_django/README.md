@@ -1,6 +1,22 @@
 # ThreatCompass 2026
 
-Interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP, MITRE ATLAS, and CompTIA SecAI+. Sibling project to `app01_react` (Java/Spring Boot + React) and `app02_angular` (Java/Spring Boot + Angular) - same domain model, but written **entirely in Python/Django, end to end**, deliberately with no second backend language and no separate SPA build. See `PLAN.md` §0 for why.
+Only for self-educational purpose and "open" standard community and values:
+this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
+This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+
+
+## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
+Sibling project to `app01_react` (Java/Spring Boot + React) and `app02_angular` (Java/Spring Boot + Angular) - same domain model, but written **entirely in Python/Django, end to end**, deliberately with no second backend language and no separate SPA build. See `PLAN.md` §0 for why.
 
 **Status:** Phase 1 — Foundation skeleton only. See `PLAN.md` for the full 7-phase roadmap (Cornucopia card catalogue, i18n, full-text search, CSV/PDF export via Celery, code samples in 5 languages, etc.) — none of that is implemented yet.
 

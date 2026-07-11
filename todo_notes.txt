@@ -1,4 +1,19 @@
 
+
+
+## Quick start: ./scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, .env (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way, only for educational purpose and better understanding what is going on.
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
+========================
+
 We have old and poor somethimes CLAUDE.md, and not responding to the rest of the projects.
 Do not change the projects, but change the every CLAUDE.md file corresponding to responding project.
 Verify every CLAUDE.md file and fix it for all these projects:

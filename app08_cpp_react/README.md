@@ -1,5 +1,21 @@
 # CppCitadel 2026 — running backend + frontend together
 
+Only for self-educational purpose and "open" standard community and values:
+this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
+This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+
+
+## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
 See `CLAUDE.md` for the full current-state notes and `../CLAUDE.md` for the shared repo
 conventions. There is **no `docker-compose.yml` in this app** — the only automated path on
 this machine is `scripts/local-dev-up.sh`. Both are documented below.
@@ -17,7 +33,7 @@ this machine is `scripts/local-dev-up.sh`. Both are documented below.
 ./scripts/local-dev-up.sh
 ```
 
-This script (fixed 2026-07-11 — it used to be a stale copy of `app01_react`'s script that ran
+This script (it used to be a stale copy of `app01_react`'s script that ran
 `mvn spring-boot:run` and never actually started this app's C++ backend, see `CLAUDE.md`)
 now does all of the following, each step skipped if already satisfied:
 
