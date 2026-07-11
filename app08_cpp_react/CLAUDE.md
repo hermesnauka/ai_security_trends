@@ -6,55 +6,93 @@ borrow checker, no macro-checked SQL, no derive-based schema validation. See
 `../CLAUDE.md` for the sibling list, canonical API contract, and shared
 local-dev setup.
 
-## Current state: backend does not exist yet
+## Current state: backend exists and implements Phase-1 endpoints
 
-Only `frontend/` (React 18 + TS + Vite, already built — `node_modules`/`dist` present)
-and `nginx/` (reverse-proxy config) exist. **There is no `backend/` directory, no
-`CMakeLists.txt`, no C++ source file anywhere in this app.** `PLAN.md`,
-`requirements.md`, `SDLC_analysis.md`, and `user_stories+tests.md` describe a large
-19-user-story end state (six OWASP Cornucopia-family card decks, i18n, background
-jobs, fuzzing pipeline) — none of it is built. If you are starting backend work here,
-you are writing the first line of C++ in this app, not extending existing code.
+`backend/` is a real Drogon C++ app (not a stub): `main.cpp`, three controllers
+(`AuthController`, `FrameworkController`, `ThreatController`), `config/Config.h`,
+`models/Models.h`, `utils/Headers.h`. It implements the canonical contract's
+`POST /api/v1/auth/login`, `GET /api/v1/frameworks[/:code]`, `GET
+/api/v1/threats[/:id]`, and `GET /health`, all wired against a real Postgres
+connection via Drogon's own async ORM (`drogon::orm::DbClient`). The root
+repo's sibling status table may still say "frontend only, backend not
+started" for app08 — that line is stale; verify against this file and the
+filesystem, not the root table.
 
-**`scripts/local-dev-up.sh` is stale/misleading**: it `cd`s into a nonexistent
-`backend/` and runs `mvn spring-boot:run` — it was copied from `app01_react` and never
-adapted. `.local-dev/backend.log` is a leftover Spring Boot log from that copy, not
-evidence of any C++ backend having run. Don't trust either file; rewrite the script
-once there's an actual C++ binary to launch.
+Not present: no test suite (GoogleTest/GoogleMock/RapidCheck from PLAN.md
+§5.7 isn't scaffolded — `find . -iname '*test*'` turns up nothing but
+`user_stories+tests.md`), no sanitizer flags in `CMakeLists.txt`, no
+`docker-compose.yml` anywhere in this app, no OpenAPI YAML, no `worker`
+subdirectory or background jobs. Treat PLAN.md's fuller vision (card decks,
+i18n, fuzzing pipeline, async export) as unbuilt aspiration — only Phase-1
+CRUD-read + login exists.
 
-## Frontend already expects the canonical contract
+## Actual stack (superseding PLAN.md §2 where they disagree)
 
-`frontend/src/types/*.ts` is already written against the canonical contract's
-shape (see `../CLAUDE.md`) — don't change it without updating the frontend.
+- **Language/build**: C++23, CMake (`backend/CMakeLists.txt`), single flat
+  target `cppcitadel` (no `core`/`api`/`worker` split PLAN.md described).
+- **Dependency manager**: **Conan** (`backend/conanfile.txt`), not vcpkg —
+  already decided, don't re-litigate. Pins `drogon/1.9.6`, `jwt-cpp/0.7.0`,
+  `spdlog/1.13.0`; Drogon built with Postgres support on, MySQL/SQLite/Redis/
+  Brotli off.
+- **DB access**: Drogon's own built-in async ORM (`drogon::orm::DbClient`,
+  `execSqlAsync`, `$1`/`$2`-style bound placeholders) talking to Postgres —
+  **not** `libpqxx` + `sqlpp11` as PLAN.md's appendix proposed. There is no
+  compile-time query-shape checking layer; parameterization is the only SQL
+  safety net (mirrors WordPress/app09's "runtime-only" situation more than
+  the sqlc/hasql-th siblings).
+- **Auth**: `jwt-cpp` signing **HS256** (`jwt::algorithm::hs256{cfg.jwtSecret}`,
+  see `AuthController.cpp`) — this **matches** app01's actual auth. PLAN.md
+  D-04's RS256 assumption was never implemented and can be treated as
+  superseded; don't "fix" this back to RS256.
+- **Password check**: glibc `crypt_r` (bcrypt hash format `$2a$...` /
+  `$2b$...`) via `<crypt.h>`, not `libsodium` Argon2id as PLAN.md said. The
+  admin password hash comes from `ADMIN_PASSWORD_HASH` (env var / `.env`),
+  default only for local dev — real deployments must override it.
+- **JSON/logging**: `jsoncpp` (`Json::Value`, Drogon's native JSON type) and
+  `spdlog`. `jwt-cpp` needs an explicit JSON-traits type since 0.6+; this app
+  uses `jwt::traits::boost_json` (Boost is already pulled in transitively by
+  Drogon, so no new dependency).
+- **CORS/OPTIONS**: handled via `registerPreRoutingAdvice` in `main.cpp`, not
+  per-route `METHOD_ADD` registration — a per-path `registerHandler(...,
+  {Options})` was tried first and silently broke GET/POST with 405 on every
+  real endpoint (Drogon doesn't merge method sets for an identical path
+  registered twice); see the comment block in `main.cpp` before changing this.
 
-## Planned stack (decided in PLAN.md §2, nothing built against it yet)
+## Frontend
 
-- **Language/toolchain**: C++23, GCC 14+ or Clang 18+
-- **Web framework**: Drogon 1.9.x (async, C++20 coroutines)
-- **Build system**: CMake, top-level `CMakeLists.txt` with subdirectories for
-  `core`/`api`/`worker`; dependency manifest is `conanfile.txt` **or** `vcpkg.json` —
-  PLAN.md hasn't committed to one yet (§5.7/appendix), decide this before scaffolding
-- **DB access**: `libpqxx` (parameterized queries) + `sqlpp11` for the subset of
-  hot-path queries that want compile-time query-shape checking; Postgres 16
-- **Auth**: `jwt-cpp` doing RS256 (PLAN.md D-04) — per `../CLAUDE.md`, app01's actual
-  auth is HS256 with a shared secret, not a key pair; resolve that mismatch before
-  implementing, don't silently "fix" the contract's actual behavior back to RS256
-- **Password hashing**: `libsodium` Argon2id (never hand-rolled)
-- **JSON / YAML / logging**: `nlohmann::json`, `yaml-cpp` (hand-written unknown-key
-  rejection, PLAN.md D-03), `spdlog`
-- **Testing**: GoogleTest + GoogleMock + RapidCheck (property tests), Drogon's own
-  HTTP test client; every `ctest` run under AddressSanitizer+UndefinedBehaviorSanitizer
-- **API docs**: hand-maintained OpenAPI 3 YAML, checked in CI against the Drogon route
-  table — there is no servant-swagger/Tapir/utoipa equivalent for C++, so this is
-  manually kept in sync, not generated
+`frontend/` is React 18 + TS + Vite, already built (`node_modules`/`dist`
+present). `frontend/src/types/index.ts` is written against the canonical
+contract's shape — don't change it without checking the backend DTOs still
+match. Structure: `src/{api,components,pages,types}`.
 
-## Before scaffolding backend/
+## Local dev tooling — scripts/local-dev-up.sh is still stale
 
-1. Read `../app01_react/backend/src/main/java/com/securevision/` for the actual
-   Phase-1 endpoint/field behavior — treat PLAN.md's aspirational sections (RS256 JWT,
-   background jobs, six card decks) as out of scope until Phase-1 parity is done.
-2. Check whether `app07_rust_react` or `app06_HASKELL_react` backends have already
-   picked conventions worth mirroring (route layout, migration runner style) before
-   inventing new ones here.
-3. Decide Conan vs vcpkg once, in `PLAN.md`'s note, before generating build files —
-   don't let it become an undocumented default.
+`scripts/local-dev-up.sh` still `cd`s into `backend/` and runs `mvn
+spring-boot:run` — it was copied from `app01_react` and never adapted to the
+Drogon binary that now exists. `.local-dev/backend.log` is a leftover Spring
+Boot log from that copy, not evidence of the C++ backend having run. Fix the
+script (point it at the real Conan/CMake build + the `cppcitadel` binary,
+port from `HTTP_PORT`/`Config.h` — default 8080) before relying on it; don't
+trust its current output. `.env` / `.env.example` already define the real env
+vars the C++ app reads (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+`DB_PASSWORD`, `HTTP_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_HOURS`,
+`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`) — use those names, not the Spring
+ones the stale script assumes.
+
+No Docker on this machine (see `../CLAUDE.md`); no `docker-compose.yml`
+exists in this app yet either, so there's nothing to fall back to besides the
+script above.
+
+## Before extending the backend further
+
+1. Cross-check any new endpoint against `../app01_react/backend/src/main/java/com/securevision/`
+   for actual Phase-1 field/behavior — not PLAN.md's aspirational sections.
+2. `resolveOrderBy()` in `ThreatController.cpp` is the pattern for any
+   user-supplied sort/column input: allowlist to a fixed map, never interpolate
+   a column name into SQL text (bound placeholders only work for values).
+3. If adding compile-time-checked queries, PLAN.md's `sqlpp11` idea is still
+   open — nothing currently blocks it, but nothing requires it either; decide
+   and document here if you add it, don't leave it implicit.
+4. If adding tests, GoogleTest/GoogleMock/RapidCheck per PLAN.md §5.7 is the
+   intended stack; none exists yet, so this would be new infrastructure, not
+   an extension of an existing suite.

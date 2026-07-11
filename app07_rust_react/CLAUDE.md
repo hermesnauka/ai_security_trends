@@ -1,56 +1,100 @@
 # RustBastion 2026 — Rust/axum implementation (app07_rust_react)
 
-The Rust implementation: intended `axum` + `sqlx` + PostgreSQL backend,
-React/TS frontend. See `../CLAUDE.md` for the sibling list, canonical API
-contract, and shared local-dev setup; see `app06_HASKELL_react/CLAUDE.md` for
-a worked example of this same file once a backend exists here.
+The Rust implementation of SecureVision: `axum` + `sqlx` + PostgreSQL backend,
+React/TS frontend. See `../CLAUDE.md` for the sibling list, canonical Phase-1
+API contract, and shared local-dev-tooling notes.
 
-## Current state: backend not started
+## Current state: backend is built (Phase-1 parity), frontend is built
 
-**Only `frontend/` exists.** It is a built React 18 + TypeScript + Vite app
-(`node_modules/`, `dist/`, `tsconfig*.tsbuildinfo` are all present — it has been run).
-There is **no `backend/` directory, no `Cargo.toml`, no Rust code, no database, no
-`docker-compose.yml` wiring a backend service.** `nginx/nginx.conf` and
-`scripts/local-dev-up.sh`/`local-dev-down.sh` exist but — check before trusting them —
-likely only stand up the frontend/proxy, not an API, since none has been written yet.
+Both `backend/` and `frontend/` exist and are implemented, not just scaffolded.
+The root `../CLAUDE.md` status table calling this "frontend only, backend not
+started" is **stale** — verify against this file, not that table.
 
-`PLAN.md` describes a large 19-user-story end state (6 card decks, i18n, RS256 JWT
-roles, `apalis` background jobs, admin CRUD, `utoipa`/Swagger). **None of it is built.**
-Treat this whole app as "frontend-only, backend at zero," not as a partially-built
-backend — there is nothing to extend yet, only a plan to start from.
+- `backend/` — Cargo workspace (`securevision-backend`, edition 2024) with a
+  binary (`src/main.rs`) plus lib (`src/lib.rs`). Implements all five
+  canonical endpoints: `POST /api/v1/auth/login`, `GET /api/v1/frameworks`,
+  `GET /api/v1/frameworks/{code}`, `GET /api/v1/threats` (filter/sort/page),
+  `GET /api/v1/threats/{id}`, `GET /health`. See `src/routes.rs`.
+- `backend/migrations/` — two `sqlx` migrations (`0001_init_schema.sql`,
+  `0002_seed_data.sql`) creating `framework`/`threat` tables and seed data.
+  Migrations run automatically at startup (`run_migrations` in `main.rs`).
+- `backend/tests/api.rs` — integration tests via `axum-test` + `#[sqlx::test]`
+  (spins up a real Postgres per test via `sqlx`'s test harness).
+- `frontend/` — built React 18 + TypeScript + Vite app (`node_modules/`,
+  `dist/` present). Pages: `Dashboard`, `Frameworks`, `FrameworkDetail`.
+  `frontend/src/types/index.ts` and `frontend/src/api/client.ts` already
+  target the canonical contract shape.
+- `docker-compose.yml` wires all three services (`postgres`, `backend`,
+  `frontend` via `nginx/nginx.conf`) — this is real, not aspirational.
 
-## Frontend already expects the canonical contract
+**Not built:** anything beyond Phase-1 — no i18n, no card decks, no admin
+CRUD, no `apalis` background jobs, no `utoipa`/Swagger, no roles beyond
+ADMIN. `PLAN.md`/`requirements.md`/`SDLC_analysis.md`/`user_stories+tests.md`
+describe that larger aspirational end state; treat them as background, not a
+build checklist for what's "left."
 
-`frontend/src/types/index.ts` is already written against the canonical
-contract's shape (see `../CLAUDE.md`) — read it before designing Rust response
-DTOs so the two don't drift.
+## Design decisions already made and implemented — don't re-litigate
 
-## What PLAN.md commits to, once backend work starts
+The old version of this file described these as open decisions to make
+"before writing the first route." They are already decided and coded:
 
-| Layer | Choice | Version |
-|---|---|---|
-| Web framework | `axum` (Tokio + Tower) | 0.8.x |
-| DB access | `sqlx` (`query!`/`query_as!`, compile-time-checked against a live schema) | 0.8.x |
-| Database | PostgreSQL | 16 |
-| Auth | `jsonwebtoken`, **RS256** per PLAN.md | — |
-| Password hashing | `argon2` (Argon2id) | — |
-| Testing | `#[tokio::test]` + `proptest` + `axum-test`/`reqwest` | — |
-| Lint/SCA | `clippy -D warnings`, `cargo-geiger`, `cargo audit`, `cargo-deny` | — |
+- **Auth is HS256, matching app01 — not RS256.** `backend/src/auth.rs` calls
+  `jsonwebtoken::encode` with the default `Header` (HS256) and
+  `EncodingKey::from_secret(config.jwt_secret...)`, a shared secret from
+  `JWT_SECRET` — same scheme as app01, despite `PLAN.md` committing to RS256.
+  Password hashing is Argon2id (not app01's BCrypt) — that's a deliberate,
+  intentional divergence since the hash format is a storage-only detail, not
+  part of the wire contract; the plaintext admin password/credentials still
+  match app01's.
+- **DB columns are comma-joined `TEXT`, matching app01 — not native
+  `TEXT[]`.** `stride`, `tags`, `cve_references` are `TEXT` columns split at
+  the application layer (`models.rs::split_csv`), same as app01's schema.
+  Unlike app01's own DTOs, this backend always normalizes `NULL`/empty to
+  `[]` rather than emitting JSON `null`, to match what the already-built
+  frontend types expect.
+- Error body shape (`{timestamp, status, error, message}`) matches the
+  canonical contract — see `backend/src/error.rs`.
+- SQL is built with `sqlx::QueryBuilder` + `.push_bind(...)` (parameterized)
+  even for dynamic filter/sort clauses; the `sort` column name is checked
+  against a fixed whitelist (`SORTABLE_COLUMNS`) before being concatenated as
+  a raw identifier — see `backend/src/handlers/threats.rs`.
 
-**Deviation already known, per `../CLAUDE.md`:** PLAN.md assumes RS256 JWT;
-app01's actual auth is HS256 with a shared secret. Don't implement RS256
-without deciding, and recording here, that this app deliberately diverges from
-app01 — the same caution applies to `sqlx migrate` vs. app01's Flyway
-migrations, and to `TEXT[]` vs. app01's comma-joined `TEXT` columns
-(`stride`/`tags`/`cve_references`).
+If you're extending this backend, cross-check `frontend/src/types/index.ts`
+and `frontend/src/api/client.ts` before changing any response shape — the
+frontend is already built against the current shape.
 
-## Before writing the first route
+## Gotcha: `scripts/local-dev-up.sh` / `local-dev-down.sh` are stale, copied from app01
 
-1. Read `app01_react/backend/src/main/java/com/securevision/` end to end for the real
-   contract (entities, DTOs, `JwtService`, error-handling advice) — not PLAN.md's vision.
-2. Read `frontend/src/types/index.ts` and `frontend/src/api/*` in this app to see what
-   shape the already-built frontend expects on the wire.
-3. Decide, and record here, whether Phase-1 follows app01 exactly (HS256, comma-joined
-   text columns) or deliberately diverges (RS256, native `TEXT[]`) — don't let PLAN.md's
-   aspirational D-04 silently become the implementation without that decision being made
-   explicitly.
+They currently drive **`mvn spring-boot:run`** and reference a Spring Boot
+backend, `Swagger UI at /swagger-ui.html`, etc. — leftover from copying
+app01's script. **They do not start this Rust backend.** To run this app
+locally without Docker, adapt them (or just run directly):
+
+```
+cd backend && cargo run          # backend on BIND_ADDR (see .env / .env.example)
+cd frontend && npm run dev       # frontend dev server (Vite)
+```
+
+or use `docker compose up --build` with `docker-compose.yml`, which is
+correct and Rust-aware. Required env vars are listed in `.env.example`
+(`POSTGRES_DB/USER/PASSWORD`, `JWT_SECRET`, `JWT_EXPIRATION_MINUTES`,
+`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`) — `backend/src/bin/hash_password.rs`
+generates the Argon2id hash for `ADMIN_PASSWORD_HASH`.
+
+## Versions in use (from `backend/Cargo.toml`)
+
+`axum` 0.8.x, `sqlx` 0.9.x (postgres, macros, migrate features),
+`jsonwebtoken` 10.x, `argon2` 0.5.x, PostgreSQL 16 (per `docker-compose.yml`),
+Rust 2024 edition. Lint/SCA tooling from `PLAN.md` (`clippy -D warnings`,
+`cargo audit`, `cargo-deny`, `cargo-geiger`) is aspirational — check CI config
+or run manually before assuming it's enforced anywhere.
+
+## Where to look for more
+
+`PLAN.md`, `requirements.md`, `SDLC_analysis.md`, `user_stories+tests.md`
+describe the full 19-user-story aspirational end state — useful for context
+on where this could go, not for what currently exists. For the actual
+Phase-1 contract this app implements, `app01_react/backend/src/main/java/com/securevision/`
+remains the source of truth per `../CLAUDE.md`; this app's implementation
+already matches it (HS256, comma-joined TEXT) rather than PLAN.md's original
+RS256/`TEXT[]` assumptions.
