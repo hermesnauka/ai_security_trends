@@ -1,9 +1,11 @@
 # SecurePress 2026 — User Stories & TDD Test Plan
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Stack:** WordPress 6.8+ / PHP 8.3 (backend) · vanilla JavaScript (frontend enhancement) · MySQL 8
 **Test frameworks:** PHPUnit + `WP_UnitTestCase` + `eris` (property-based) + `wp-browser`/Codeception · Playwright
+
+**Uwaga o pochodzeniu danych (zobacz `PLAN.md` §0.1):** surowe pliki `docs/OWASP_stories/*.yaml` zawierają wyłącznie pola `id`/`value`/`url`/`desc`/`misc` — **żaden plik źródłowy nie ma pola `severity`, `card_kind` ani referencji do OWASP/MITRE/CWE**. Wszystkie mapowania OWASP/MITRE pokazane w tabelach poniżej (kolumna "Mapowanie") są więc treścią **kuratorowaną** przez zespół (`data/cornucopia/curation/*.curation.json`, `PLAN.md` D-08), nie wartościami wyodrębnionymi z YAML — dokładność tych mapowań jest odpowiedzialnością redakcyjną, weryfikowaną przez `Reference_Validator` (SR-07) i przegląd CODEOWNERS, a nie przez parsowanie źródła. Angielskie opisy kart w tabelach poniżej pochodzą z rzeczywistej treści `desc`/`misc` pól w plikach źródłowych; polskie tłumaczenia są tłumaczeniem własnym zespołu, podlegającym tej samej bramce i18n co FR-18.
 
 ---
 

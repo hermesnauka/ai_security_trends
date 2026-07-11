@@ -1,0 +1,49 @@
+services:
+  wordpress:
+    image: wordpress:6.8-php8.3-fpm
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_NAME: securepress
+      WORDPRESS_DB_USER: securepress
+      WORDPRESS_DB_PASSWORD: ${SECUREPRESS_DB_PASSWORD:?set in .env, never committed}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISABLE_WP_CRON', true);
+        define('DISALLOW_FILE_EDIT', true);
+    volumes:
+      - ./wp-content/plugins/securepress-2026:/var/www/html/wp-content/plugins/securepress-2026
+      - wordpress_data:/var/www/html
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "8009:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - wordpress_data:/var/www/html:ro
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: securepress
+      MYSQL_USER: securepress
+      MYSQL_PASSWORD: ${SECUREPRESS_DB_PASSWORD:?set in .env, never committed}
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    command: --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+
+volumes:
+  wordpress_data:
+  mysql_data:

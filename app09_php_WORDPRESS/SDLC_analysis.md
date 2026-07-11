@@ -1,7 +1,7 @@
 # SecurePress 2026 — SSDLC / SDLC Analysis
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Document type:** Secure Software Development Lifecycle (SSDLC) analysis, mapped against the classic SDLC
 **Scope:** Full lifecycle analysis of the application defined in `PLAN.md`, `requirements.md`, and `user_stories+tests.md`
 **Methodology:** Agile — Scrum for planning/cadence, Kanban overlay for the engineering + security workflow
@@ -225,6 +225,13 @@ See `requirements.md` §7 for the full table (AC-01–AC-18). Highlights specifi
 | AC-14 | A future contributor registers a new REST route and forgets the `permission_callback` argument — historically, this exact mistake has been a real, exploited WordPress REST API vulnerability class across multiple plugins; the CI grep check exists specifically because there is no framework-level default that fails safe here (an omitted `permission_callback` in older WordPress versions defaulted to *public*, not *denied*). |
 | AC-16 | A user copy-pastes the Digital-by-Default Harms deck into a vulnerability report as if `SCO2` were a CVSS-scored finding — mitigated at the database layer regardless of which application code path is involved, the one abuse case in this whole series whose mitigation does not depend on any PHP code being correct. |
 | AC-17/AC-18 | Credential stuffing against `wp-login.php` and XML-RPC amplification/enumeration abuse — both are attack classes that exist *because this application runs on WordPress*, not because of anything this plugin's own code does; they would not appear in any custom-backend sibling's abuse case table at all. |
+| AC-19 | A curation file (`curation/*.curation.json`) assigns a `severity`/OWASP reference to a `card_id` that doesn't exist, or is misspelled, in its matching raw YAML — a data-provenance risk unique to this project's ingestion pipeline. |
+
+### 1.5 A concrete "shift-left" catch during this phase: the source data has no security-relevant fields at all
+
+Requirements analysis (this phase) is where this gap was actually found, not implementation — which is the point of doing threat modeling before writing code. Reading the six raw `docs/OWASP_stories/*.yaml` decks during requirements work showed each card carries only `id`, `value`, `url` (where present), `desc`, and `misc` — **no `severity`, no `card_kind`, no OWASP/MITRE/CWE cross-reference field exists in the source at all** (`PLAN.md` §0.1). Had this been discovered only during implementation (Phase 3) or, worse, in production, the likely failure mode is a developer inventing plausible-looking severities/references ad hoc inside application code, with no review trail and no way to distinguish "curated by a security reviewer" from "guessed by whoever wrote the ingestion script that week."
+
+Catching it here changes the design, not just the data: `PLAN.md` D-08 introduces a **separate, versioned curation file per deck** (`data/cornucopia/curation/*.curation.json`), reviewed through the same CODEOWNERS PR gate as the source YAML itself (`PLAN.md` §12), validated against a reference allowlist (SR-07) before any database write, and explicitly fails ingestion if a curation entry references a `card_id` absent from the raw deck (AC-19) — rather than silently dropping it or silently leaving a card uncurated. This is Requirements & Threat Modeling doing its job: a data-integrity risk that would otherwise surface as a quiet correctness bug in Phase 3 instead became an explicit, reviewed design decision in Phase 1.
 
 ---
 
