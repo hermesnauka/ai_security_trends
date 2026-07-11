@@ -41,7 +41,7 @@
   function renderResults(threats) {
     if (threats.length === 0) {
       resultsList.innerHTML =
-        '<li>' + escapeHtml(securePressConfig.strings && securePressConfig.strings.noResults ? securePressConfig.strings.noResults : 'Brak wynikow.') + '</li>';
+        '<li>' + escapeHtml(securePressConfig.strings && securePressConfig.strings.noResults ? securePressConfig.strings.noResults : 'Brak wyników.') + '</li>';
       return;
     }
 

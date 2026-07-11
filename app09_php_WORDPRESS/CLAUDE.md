@@ -42,8 +42,27 @@ something to assume is complete. `suit-archive.php` (generic, `?suit=`/`?edition
 view from `PLAN.md` §8 are simplified to `suit-archive.php` for now, not built as their own
 templates yet.
 
-**Still not built:** mitigations/code-samples data and UI (Phase 4), admin screens
-(`includes/admin/` is an empty directory), search/export (Phase 6), the dedicated
+**Mitigations + 5-language code samples are now built** (PLAN.md §6 Phase 4): `sp_mitigations`
+gained a `slug` column (not in the original PLAN.md §5.1 text — added and documented there
+too) so seed data can upsert idempotently by a stable key instead of a fragile options-table
+lookup. `Mitigation_Repository`/`Service`, `Code_Sample_Repository`/`Service`, and
+`Mitigation_Seed_Loader` (wired into activation after cards) seed **5 representative
+mitigations** — SQL injection (A03), broken access control (A01), prompt injection (LLM01),
+rate-limiting for unbounded consumption (LLM10 + card `LLM2`), and supply-chain dependency
+integrity (A08) — each with a real attack_demo + defense code pair in all five languages
+(50 files total under `data/code_samples/{python,java,go,scala,lua}/`, manifest in
+`data/code_samples_manifest.json`). **Not every seeded threat has a mitigation yet** — only
+these 5, matching the same representative-slice pattern as card curation. `single-threat.php`
+now renders real mitigations + tabbed code samples: language bodies are server-rendered fully
+visible (JS only collapses them into tabs once loaded, so nothing is JS-only), and the
+attack-demo gate is a native `<details>`/`<summary>` disclosure (not a `<dialog>` — a
+`<dialog>` can't be opened at all without JavaScript, which would have broken the JS-disabled
+requirement). A MITRE ATLAS kill-chain timeline (`assets/js/mitre-killchain.js`, SVG, no
+charting dependency) renders for the 4 threats with data in `data/mitre_atlas_killchain.json`,
+alongside — never replacing — a plain `<ol>` that is the actual accessible/no-JS content.
+
+**Still not built:** mitigations/code samples for any threat or card beyond the 5 above, admin
+screens (`includes/admin/` is an empty directory), search/export (Phase 6), the dedicated
 stride-heatmap/matrix pages, i18n `.po`/`.mo` files, and all tests (`tests/`, `e2e/` don't
 exist yet — nothing in this plugin has been executed against a real WordPress+MySQL
 instance; no `composer install` has been run either). Verify against the filesystem, not

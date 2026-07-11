@@ -1,0 +1,21 @@
+{
+  "_comment": "Only tactic IDs actually confirmed present in docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md (TA0003, TA0008, TA0012, TA0013, TA0014) carry an id below; other stages are named per the source's worked attack-chain example but have no confirmed ATLAS tactic ID in that source, so `id` is null rather than a fabricated code (PLAN.md §0.1).",
+
+  "LLM01:2025": [
+    { "tactic": "Reconnaissance", "id": null, "technique": null },
+    { "tactic": "Initial Access", "id": "TA0003", "technique": "AML.T0051 Prompt Injection" },
+    { "tactic": "Execution", "id": null, "technique": null }
+  ],
+  "LLM03:2025": [
+    { "tactic": "Initial Access", "id": "TA0003", "technique": "AML.T0010 ML Supply Chain Compromise" },
+    { "tactic": "ML Attack Staging", "id": "TA0012", "technique": null }
+  ],
+  "LLM04:2025": [
+    { "tactic": "ML Attack Staging", "id": "TA0012", "technique": "AML.T0020 Poison Training Data" },
+    { "tactic": "Defense Evasion", "id": "TA0008", "technique": null }
+  ],
+  "LLM10:2025": [
+    { "tactic": "Resource Development", "id": null, "technique": null },
+    { "tactic": "Impact", "id": "TA0014", "technique": "AML.T0029 Denial of ML Service" }
+  ]
+}

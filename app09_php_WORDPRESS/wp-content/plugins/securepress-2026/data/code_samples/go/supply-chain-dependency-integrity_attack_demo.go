@@ -1,0 +1,3 @@
+// VULNERABLE — do not use in production
+// GOFLAGS=-mod=mod GONOSUMCHECK=1 go build ./...
+// (disables checksum verification against the Go module checksum database)

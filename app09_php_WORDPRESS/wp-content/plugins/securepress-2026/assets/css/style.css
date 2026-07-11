@@ -107,6 +107,73 @@
   margin: 1rem 0;
 }
 
+.securepress-code-panel {
+  margin-bottom: 2rem;
+}
+
+.securepress-language-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.securepress-language-tabs button[aria-selected='true'] {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.securepress-code-defense pre,
+.securepress-code-attack-demo pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+/* PLAN.md §6 Phase 4: red-bordered warning label + confirmation gate before
+   attack-demo code is shown, so it is never confused with the defense sample
+   next to it (FR-03.4, SR-12.3). */
+.securepress-code-attack-demo {
+  border: 2px solid var(--securepress-color-critical);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.securepress-attack-demo-label {
+  color: var(--securepress-color-critical);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.securepress-autonomy-risk-badge,
+.securepress-design-harm-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  background: var(--securepress-color-high);
+  color: #fff;
+}
+
+.securepress-killchain {
+  padding-left: 1.25rem;
+}
+
+.securepress-killchain-tactic-id,
+.securepress-killchain-technique {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--securepress-color-info);
+}
+
+.securepress-killchain-svg svg {
+  color: var(--securepress-color-fg);
+  max-width: 100%;
+}
+
 @media (max-width: 375px) {
   .securepress { padding: 0.5rem; }
 }

@@ -14,9 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Threat_Service {
 
 	private Threat_Repository $repository;
+	private Mitigation_Service $mitigation_service;
 
-	public function __construct( ?Threat_Repository $repository = null ) {
-		$this->repository = $repository ?? new Threat_Repository();
+	public function __construct( ?Threat_Repository $repository = null, ?Mitigation_Service $mitigation_service = null ) {
+		$this->repository         = $repository ?? new Threat_Repository();
+		$this->mitigation_service = $mitigation_service ?? new Mitigation_Service();
 	}
 
 	public function list( Threat_Filter $filter ): array {
@@ -61,6 +63,8 @@ final class Threat_Service {
 			'attackSurface' => $row->attack_surface,
 			'stride'        => $row->stride,
 			'tags'          => json_decode( $row->tags, true ) ?: array(),
+			// FR-02: threat detail nests mitigations + their code samples.
+			'mitigations'   => $this->mitigation_service->for_threat_id( (int) $row->id ),
 		);
 	}
 }

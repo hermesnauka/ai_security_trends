@@ -7,6 +7,7 @@ namespace SecurePress;
 use SecurePress\Cards\Card_Ingestion_Service;
 use SecurePress\Cron\Periodic_Reverify_Job;
 use SecurePress\Cron\Reingest_Deck_Job;
+use SecurePress\Data\Mitigation_Seed_Loader;
 use SecurePress\Data\Schema;
 use SecurePress\Data\Seed_Loader;
 use SecurePress\Rest_Api\Rest_Api;
@@ -104,6 +105,7 @@ final class Plugin {
 		self::register_role_and_capability();
 		( new Seed_Loader() )->seed();
 		( new Card_Ingestion_Service() )->ingest_all();
+		( new Mitigation_Seed_Loader() )->seed();
 		update_option( 'securepress_db_version', SECUREPRESS_DB_VERSION );
 		flush_rewrite_rules();
 	}
@@ -156,6 +158,14 @@ final class Plugin {
 			array( 'strategy' => 'defer', 'in_footer' => true )
 		);
 
+		wp_enqueue_script(
+			'securepress-2026-mitre-killchain',
+			SECUREPRESS_PLUGIN_URL . 'assets/js/mitre-killchain.js',
+			array(),
+			SECUREPRESS_VERSION,
+			array( 'strategy' => 'defer', 'in_footer' => true )
+		);
+
 		wp_localize_script(
 			'securepress-2026-threat-browser',
 			'securePressConfig',
@@ -163,6 +173,14 @@ final class Plugin {
 				'restUrl' => esc_url_raw( rest_url( 'securepress/v1/' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'locale'  => get_locale(),
+				'strings' => array(
+					// FR-18.3: the one dynamic JS-rendered string in this plugin
+					// is translated PHP-side and passed through wp_localize_script
+					// rather than the full wp_set_script_translations() JSON-file
+					// pipeline, since there is currently only this single string —
+					// a deliberate scope simplification, not an oversight.
+					'noResults' => __( 'Brak wyników.', 'securepress-2026' ),
+				),
 			)
 		);
 	}
