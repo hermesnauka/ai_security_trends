@@ -1,7 +1,23 @@
 # HaskShield 2026 (app06_HASKELL_react)
 
+Only for self-educational purpose and "open" standard community and values:
+this is an interactive reference mapping security threats, vulnerabilities, and mitigations across OWASP (with Cornucopia cards and game concepts), MITRE ATLAS, and CompTIA SecAI+, ml-ops.org CRISP-ML(Q), SSDLC, Security Architects game concept with cards (by Sroka), etc. (information gathered from all these sources like: OWASP, MITRE ATLAS etc.).
+This is only a kind of "snapshot" of knowledge gathered together in 2026, in july (and not being updated continuously).
+
+
+## Quick start: ./$PROJECT/scripts/local-dev-up.sh script (recommended)
+
+ATTENTION!!! Remember about hiding secrets and passwords in Vaults, secured .env file (not commited) or environment variables (like "${POSTGRES_PASSWORD}") to keep them in secret.
+In this manual secrets and passwords are not secured in such proper way: only for educational purpose and better understanding what is going on. Learn how to hide and keep in secret in Vaults... You can run this open-source code at your own risk. Caveat emptor. 
+
+### Quick start:
+
+```bash
+./scripts/local-dev-up.sh
+```
+
 SecureVision's Haskell implementation: `servant` + `hasql` backend, Vite/React/TypeScript
-frontend. Phase-1 scope only — mirrors `app01_react`'s actual (not aspirational) API contract.
+frontend. Phase-1 scope only - mirrors `app01_react`'s actual (not aspirational) API contract.
 See `CLAUDE.md` for the full current-state summary, `backend/CLAUDE.md`/`frontend/CLAUDE.md`
 for stack-specific command/layout reference, and `../CLAUDE.md` for the shared sibling
 conventions.
@@ -9,7 +25,7 @@ conventions.
 ## There is no `docker-compose.yml` in this app
 
 Unlike most siblings, this directory only has standalone `backend/Dockerfile` and
-`frontend/Dockerfile`, plus `nginx/nginx.conf` — no compose file ties them together. Run
+`frontend/Dockerfile`, plus `nginx/nginx.conf` - no compose file ties them together. Run
 backend and frontend as two separate processes (see below). Don't invent a `docker compose up`
 command for this app; it doesn't exist here.
 
