@@ -22,7 +22,7 @@ detail — read this file first, then that one.
 | `app09_php_WORDPRESS` | PHP/WordPress plugin | extensive WordPress plugin scaffold built (ingestion, mitigations/code samples, i18n, search/export/matrix, full-but-unexecuted test suite) — see its own `CLAUDE.md` for the representative-slice scope of each piece |
 | `app10_csharp_react` | C#/.NET 9 + React | backend+frontend built; HS256, matches app01 |
 | `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | real Swift source built (SwiftData models, ContentSeeder, Views) plus a real package-level test suite (XCTest+SwiftCheck, runnable via `swift test`) but **no `.xcodeproj` and never compiled** — no API, offline-only |
-| `app12_kotlin_android` | native Android (Compose/Room) | real Kotlin source built (Room entities/DAOs, ContentSeeder, repositories, Compose screens, `:data`/`:ui`/`:app` Gradle modules) but **never assembled/compiled** — no API, offline-only, structural twin of app11 |
+| `app12_kotlin_android` | native Android (Compose/Room) | real Kotlin source built (Room entities/DAOs, ContentSeeder, repositories, Compose screens, `:data`/`:ui`/`:app` Gradle modules) plus a real test suite (JUnit4+Robolectric for `:data`, fakes for `:ui`, 2 instrumented Compose UI tests) but **never assembled/compiled** — no API, offline-only, structural twin of app11 |
 
 This table was last verified against every app's actual filesystem/source on 2026-07-11.
 

@@ -77,20 +77,78 @@ have one) — each with a real attack-demo + defense code sample in Python/Java/
 Lua. Every other framework family (Agentic AI, API, Client-Side, CI/CD, OAT, MASVS) exists
 as a catalogue row with no seeded threats yet.
 
-**Not built at all:**
-- **No `.apk` has ever been assembled.** No Android SDK/Gradle/JDK toolchain exists in the
-  environment this was written in — every file here is real, structurally-checked-by-hand
-  Kotlin (brace-balanced, cross-referenced for dangling type/import names, DAO `@Query`
-  columns checked by hand against entity fields since KSP can't run here to do it), but
-  none of it has been run through `./gradlew build` or Android Studio. Treat it the same
-  as app09's Docker Compose files and app11's Swift package: unverified-but-real source.
-- Google Sign-In + Cloud Firestore bookmark sync (D-07), a `WorkManager` periodic
-  re-verification job (the `BGAppRefreshTask` analogue), export
+**The test suite is now real** (previously `data/src/test`/`app/src/androidTest` were both
+empty directories):
+
+- **`data/src/test/kotlin/`** (JVM unit tests — `FileAssetSource` reads the REAL bundled
+  content directly via a relative filesystem path into `../app/src/main/assets/`, not a
+  synthetic duplicate, so tests assert realistic facts: ≥10 frameworks, 20 threats, 5
+  mitigations, all 5 languages per mitigation): `CardKind`, `Hashing` (real SHA-256
+  vectors), `CardFile`/kaml YAML decoding (D-06 unknown-key rejection at every nesting
+  level, no Robolectric needed — pure kotlinx.serialization), `CurationFileLoader`,
+  `ReferenceValidator` (real allowlists), `CardLoader` (real 6-deck `loadAll()` plus
+  fixture-based negative cases via a temp-directory `FileAssetSource.fixture(...)`),
+  `IntegrityChecker`, `ContentSeeder` end to end, all 7 repositories, and 2 property tests
+  (Kotest's `Arb`/`checkAll`, used as a plain library call inside ordinary JUnit4 `@Test`s —
+  not via Kotest's own Spec/JUnit5 runner, to avoid mixing two test frameworks in one
+  module).
+  - **Room fundamentally needs an Android runtime** (unlike SwiftData, a pure
+    Swift/Foundation library — app11_swift_ios's equivalent tests run under plain `swift
+    test` alone) — every Room-touching test class here uses **Robolectric**
+    (`@RunWith(RobolectricTestRunner::class)`, `@Config(sdk = [34])`,
+    `Room.inMemoryDatabaseBuilder(...).allowMainThreadQueries()`) to get real SQL execution
+    without a connected device/emulator. This is a genuine, unavoidable architectural
+    difference from app11's twin test suite, not an oversight — see `data/build.gradle.kts`
+    for the full JUnit4 + Robolectric + androidx.test dependency set this required.
+  - **A real bug was caught and fixed while writing these tests**: `CardLoader.buildSeed`
+    used to fail on ANY card with no curation entry — since only a representative slice of
+    each deck is curated (e.g. the real `webapp` deck has 80 raw cards but only 14
+    curated), `ContentSeeder.seedIfNeeded()` would have crashed immediately if ever
+    actually run. Fixed so an uncurated card is silently skipped (the common, expected
+    case) while a curated-but-malformed-severity entry still throws (a real data bug,
+    correctly still fatal) — identical fix also made in app11_swift_ios's Swift port of
+    this same loader, discovered there first.
+  - **A second real bug, found the same way**: `CardDecodeError`'s subclasses
+    (`UnknownReference`, `OrphanCurationEntry`, `MissingCuratedSeverity`,
+    `MissingRequiredField`) took constructor parameters that were never declared `val` —
+    meaning no caller could ever actually read `.value`/`.field`/`.cardId` off a caught
+    exception. Fixed to expose them as properties.
+- **`ui/src/test/kotlin/`** (JVM unit tests, deliberately Robolectric-free): ViewModels
+  depend only on `:data`'s Repository *interfaces*, so they're tested against
+  hand-written in-memory fakes (`FakeFrameworkRepository`, `FakeThreatRepository`, etc. in
+  `support/FakeRepositories.kt`) — no Room, no Android runtime needed at all for this
+  module. `MainDispatcherRule` installs a shared `TestDispatcher` as `Dispatchers.Main` so
+  `viewModelScope.launch` work is deterministically controllable; the debounce test for
+  `ThreatBrowserViewModel`/`SearchViewModel` uses `advanceTimeBy` (virtual time — instant,
+  no wall-clock wait), an improvement over app11_swift_ios's equivalent test, which does a
+  real ~450ms `Task.sleep` since Swift's `Task.sleep` isn't virtual-time controllable the
+  way a `TestDispatcher` is.
+  - **A third real bug, found while trying to write these tests at all**:
+    `ThreatDetailViewModel` depended on the concrete `DataContainer` class directly (plus a
+    redundant, inconsistent `dataContainer.bookmarkRepository` reference alongside its own
+    separately-injected `bookmarkRepository` parameter) — making it impossible to unit-test
+    with a fake. Fixed by adding a proper `CodeSampleRepository` interface +
+    `RoomCodeSampleRepository` (Room entities have no live relationship traversal the way
+    SwiftData's `Mitigation.codeSamples` does, so this abstraction is what fills that gap),
+    and having the ViewModel depend on that instead of `DataContainer`.
+- **`app/src/androidTest/kotlin/`** has 2 representative Compose UI tests
+  (`US01FrameworksUiTest.kt`, `US03ThreatDetailUiTest.kt`) — real source, consistent with
+  real `Modifier.testTag(...)` values now added to
+  `RootScreen`/`FrameworkListScreen`/`ThreatBrowserScreen`/`CodeSamplePanel` specifically
+  for this. **Cannot run here**: Compose's instrumented UI-testing API needs a connected
+  device/emulator, the same category of requirement as app11_swift_ios's XCUITest needing
+  the iOS Simulator. The other 17 user stories' UI tests are not written yet — same
+  representative-slice pattern as the content scope above, not an oversight.
+- **Still not built**: Google Sign-In + Cloud Firestore bookmark sync (D-07), a
+  `WorkManager` periodic re-verification job (the `BGAppRefreshTask` analogue), export
   (`Intent.ACTION_SEND`/`ShareSheet`), the MITRE ATLAS kill-chain timeline Composable,
   matrix/heatmap screens (the `RoomMatrixRepository` backing them exists in `:data`, but no
-  `LlmMatrixScreen`/`StrideHeatmapScreen`/etc. consume it yet), `detekt` config, and the
-  entire test suite (`data/src/test`, `app/src/androidTest` are both still empty
-  directories).
+  `LlmMatrixScreen`/`StrideHeatmapScreen`/etc. consume it yet), and `detekt` config.
+- **Nothing has actually been executed.** No Android SDK/Gradle/JDK toolchain exists in
+  the environment this was written in — every file here, including the test suite itself,
+  is real, structurally-checked-by-hand Kotlin, but none of it has been run through
+  `./gradlew build`/`./gradlew test` or Android Studio. Treat it the same as app09's Docker
+  Compose files and app11's Swift package: unverified-but-real source.
 
 ## Architecture decisions to know before writing more code (see `PLAN.md` §2–§5)
 
@@ -129,9 +187,11 @@ as a catalogue row with no seeded threats yet.
 No `scripts/`, `nginx`, or `docker-compose.yml` — local development needs **Android
 Studio** (or a standalone Gradle + Android SDK install) instead: build/run via
 `./gradlew assembleDebug` / `./gradlew installDebug` targeting an emulator or device
-(API 26+), test via JUnit 5 + Kotest (`:data`, unit-level) and Espresso (`:app`,
-instrumented — replaces Playwright), lint via `detekt`. None of this has actually been
-run here either — see "Not built" above.
+(API 26+), unit-test via `./gradlew :data:test :ui:test` (JUnit4 + Robolectric for
+Room-backed `:data` tests, plain JUnit4 + fakes for `:ui`), instrumented-test via
+`./gradlew :app:connectedAndroidTest` (Compose UI testing — replaces Playwright, needs a
+device/emulator), lint via `detekt`. None of this has actually been run here either — see
+"Not built" above.
 
 ## Where to look for more depth
 
