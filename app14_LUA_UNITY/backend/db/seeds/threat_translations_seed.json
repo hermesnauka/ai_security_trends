@@ -1,0 +1,81 @@
+[
+  { "code": "A01:2021", "locale": "pl", "title": "Niepoprawna Kontrola Dostępu",
+    "description": "Ograniczenia dotyczące tego, co mogą robić uwierzytelnieni użytkownicy, nie są poprawnie wymuszane, co pozwala atakującym na dostęp do nieautoryzowanej funkcjonalności lub danych.",
+    "attack_vector": "Modyfikacja adresu URL, wewnętrznego stanu aplikacji lub żądania API w celu uzyskania dostępu do rekordów lub funkcjonalności nieprzeznaczonych dla bieżącego użytkownika (np. ominięcie sprawdzenia identyfikatora obiektu)." },
+
+  { "code": "A02:2021", "locale": "pl", "title": "Błędy Kryptograficzne",
+    "description": "Dane wrażliwe są narażone lub skompromitowane, ponieważ nie zostały zaszyfrowane, zostały zaszyfrowane słabym lub przestarzałym algorytmem, albo klucze były źle zarządzane.",
+    "attack_vector": "Przechwytywanie niezaszyfrowanego ruchu lub atak na dane w spoczynku chronione jedynie słabym lub przestarzałym szyfrem." },
+
+  { "code": "A03:2021", "locale": "pl", "title": "Wstrzyknięcie (Injection)",
+    "description": "Niezaufane dane są przesyłane do interpretera (SQL, polecenia systemowe, XPath itp.) jako część polecenia lub zapytania, zmieniając jego zamierzone wykonanie.",
+    "attack_vector": "Przesłanie spreparowanych danych wejściowych, które są łączone w ciąg zapytania/polecenia zamiast być przekazywane jako parametr." },
+
+  { "code": "A04:2021", "locale": "pl", "title": "Niebezpieczny Projekt",
+    "description": "Brakujący lub nieskuteczny mechanizm bezpieczeństwa na etapie projektowania, którego nie da się naprawić samą lepszą implementacją, ponieważ wada ma charakter architektoniczny.",
+    "attack_vector": "Wykorzystanie luki w logice biznesowej, która nigdy nie została poddana modelowaniu zagrożeń (np. brak ograniczenia liczby prób resetu hasła z założenia projektowego)." },
+
+  { "code": "A05:2021", "locale": "pl", "title": "Błędna Konfiguracja Zabezpieczeń",
+    "description": "Niebezpieczne domyślne konfiguracje, niekompletne konfiguracje, otwarte magazyny danych w chmurze lub szczegółowe komunikaty błędów ujawniające wewnętrzne działanie systemu.",
+    "attack_vector": "Odkrycie i wykorzystanie domyślnych danych uwierzytelniających, odsłoniętego panelu administracyjnego lub źle skonfigurowanego magazynu danych w chmurze." },
+
+  { "code": "A06:2021", "locale": "pl", "title": "Podatne i Nieaktualne Komponenty",
+    "description": "Używanie bibliotek, frameworków lub innych komponentów ze znanymi podatnościami, lub takich, które nie są już utrzymywane.",
+    "attack_vector": "Wykorzystanie publicznego CVE w zależności, której aplikacja nie załatała." },
+
+  { "code": "A07:2021", "locale": "pl", "title": "Błędy Identyfikacji i Uwierzytelniania",
+    "description": "Słabości w potwierdzaniu tożsamości użytkownika, zarządzaniu sesją lub obsłudze danych uwierzytelniających, umożliwiające przejęcie konta.",
+    "attack_vector": "Credential stuffing, atak brute-force bez ograniczenia liczby prób, lub ataki typu session-fixation." },
+
+  { "code": "A08:2021", "locale": "pl", "title": "Błędy Integralności Oprogramowania i Danych",
+    "description": "Kod i infrastruktura, które nie chronią przed naruszeniami integralności, np. poleganie na wtyczkach/bibliotekach z niezaufanych źródeł lub niezabezpieczone pipeline'y CI/CD.",
+    "attack_vector": "Manipulacja mechanizmem aktualizacji, pipeline'em CI/CD lub ładunkiem deserializacji, który nie jest weryfikowany pod kątem integralności." },
+
+  { "code": "A09:2021", "locale": "pl", "title": "Błędy Logowania i Monitorowania Bezpieczeństwa",
+    "description": "Niewystarczające logowanie, monitorowanie i alertowanie pozwala, by naruszenia pozostawały niewykryte przez dłuższy czas.",
+    "attack_vector": "Działanie w skompromitowanym systemie bez wykrycia, ponieważ żaden alert nie uruchamia się przy podejrzanej aktywności." },
+
+  { "code": "A10:2021", "locale": "pl", "title": "Fałszowanie Żądań Po Stronie Serwera (SSRF)",
+    "description": "Aplikacja webowa pobiera zdalny zasób, używając adresu URL dostarczonego przez użytkownika, bez walidacji miejsca docelowego, co umożliwia dostęp do sieci wewnętrznej.",
+    "attack_vector": "Podanie wewnętrznego adresu URL lub adresu metadanych chmury do funkcji pobierającej dane po stronie serwera (np. webhooka lub funkcji pobierania obrazów)." },
+
+  { "code": "LLM01:2025", "locale": "pl", "title": "Wstrzyknięcie Promptu",
+    "description": "Spreparowane dane wejściowe manipulują modelem LLM, aby zignorował swoje pierwotne instrukcje lub prompt systemowy, wykonując zamiast tego instrukcje atakującego.",
+    "attack_vector": "Bezpośrednie wstrzyknięcie promptu (w wypowiedzi użytkownika) lub pośrednie (poprzez pobrany dokument, wynik narzędzia lub stronę internetową, którą model odczytuje)." },
+
+  { "code": "LLM02:2025", "locale": "pl", "title": "Ujawnienie Informacji Wrażliwych",
+    "description": "Model ujawnia poufne dane ze swojego zbioru treningowego, promptu systemowego lub połączonych narzędzi/źródeł danych w swojej odpowiedzi.",
+    "attack_vector": "Adwersarialny prompt engineering zaprojektowany, by wydobyć zapamiętane dane treningowe lub ujawnić prompt systemowy." },
+
+  { "code": "LLM03:2025", "locale": "pl", "title": "Podatności Łańcucha Dostaw",
+    "description": "Podatne lub złośliwie zmanipulowane wstępnie wytrenowane modele, zbiory danych, adaptery fine-tuningu lub wtyczki kompromitują aplikację na nich zbudowaną.",
+    "attack_vector": "Pobranie zatrutego checkpointu modelu z publicznego huba modeli i wdrożenie go bez weryfikacji pochodzenia." },
+
+  { "code": "LLM04:2025", "locale": "pl", "title": "Zatruwanie Danych i Modelu",
+    "description": "Dane treningowe, fine-tuningowe lub embeddingowe są manipulowane w celu wprowadzenia podatności, backdoorów lub uprzedzeń do wynikowego modelu.",
+    "attack_vector": "Wstrzyknięcie spreparowanych przykładów do publicznego lub tłumowego zbioru danych treningowych/fine-tuningowych." },
+
+  { "code": "LLM05:2025", "locale": "pl", "title": "Niewłaściwa Obsługa Wyjścia",
+    "description": "Wyjście modelu jest przekazywane dalej (do powłoki, zapytania bazodanowego, DOM przeglądarki lub innego systemu) bez walidacji, co umożliwia ataki wstrzyknięcia w tym kontekście docelowym.",
+    "attack_vector": "Nakłonienie modelu do wygenerowania odpowiedzi zawierającej ładunek (SQL, polecenie powłoki, HTML/JS), który system docelowy wykonuje bez sanityzacji." },
+
+  { "code": "LLM06:2025", "locale": "pl", "title": "Nadmierna Autonomia",
+    "description": "Agent oparty na LLM otrzymuje więcej funkcjonalności, uprawnień lub autonomii niż wymaga jego zadanie, co umożliwia szkodliwe działania wynikające ze zmanipulowanej lub zhalucynowanej decyzji.",
+    "attack_vector": "Manipulacja agentem (przez wstrzyknięcie promptu lub zatruty wynik narzędzia), by wywołał działanie o wysokich uprawnieniach poza zamierzonym zakresem." },
+
+  { "code": "LLM07:2025", "locale": "pl", "title": "Wyciek Promptu Systemowego",
+    "description": "Prompt systemowy — często zawierający logikę biznesową, instrukcje guardrails lub sekrety — zostaje ujawniony użytkownikowi, podważając zabezpieczenia, które definiuje.",
+    "attack_vector": "Adwersarialne wzorce promptowania zaprojektowane specjalnie, by skłonić model do powtórzenia lub streszczenia własnych instrukcji." },
+
+  { "code": "LLM08:2025", "locale": "pl", "title": "Słabości Wektorów i Embeddingów",
+    "description": "Słabości w sposobie generowania, przechowywania lub pobierania wektorów i embeddingów w pipeline RAG umożliwiają wstrzyknięcie, wyciek lub manipulację.",
+    "attack_vector": "Zatrucie współdzielonego magazynu wektorów spreparowanym dokumentem, który zostaje pobrany do kontekstu innego najemcy (tenant)." },
+
+  { "code": "LLM09:2025", "locale": "pl", "title": "Dezinformacja",
+    "description": "Model generuje fałszywe lub mylące treści przedstawiane jako fakt (w tym zhalucynowane cytaty lub API), a użytkownicy nadmiernie polegają na nich bez weryfikacji.",
+    "attack_vector": "Nie jest wymagane bezpośrednie działanie atakującego — ryzyko materializuje się poprzez niezweryfikowane poleganie na pewnie brzmiącej, lecz błędnej odpowiedzi modelu." },
+
+  { "code": "LLM10:2025", "locale": "pl", "title": "Nieograniczone Zużycie Zasobów",
+    "description": "Niekontrolowane zużycie zasobów (obliczeniowych, kosztowych lub długości kontekstu) wynikające z nadmiernego lub adwersarialnego odpytywania prowadzi do odmowy usługi lub niekontrolowanych kosztów (\"denial of wallet\").",
+    "attack_vector": "Przesyłanie zasobożernych lub rekurencyjnych zapytań bez wymuszonego limitu szybkości, limitu długości tokenów lub budżetu kosztowego." }
+]

@@ -1,0 +1,10 @@
+{
+  "SP2": { "severity": "medium",   "owasp_refs": ["A05:2021"],             "mitre_refs": [] },
+  "SP3": { "severity": "high",     "owasp_refs": ["A07:2021"],             "mitre_refs": [] },
+  "TA2": { "severity": "high",     "owasp_refs": ["A02:2021"],             "mitre_refs": [] },
+  "TA6": { "severity": "high",     "owasp_refs": ["A01:2021", "A08:2021"], "mitre_refs": [] },
+  "RE2": { "severity": "medium",   "owasp_refs": ["A09:2021"],             "mitre_refs": [] },
+  "ID2": { "severity": "high",     "owasp_refs": ["A02:2021"],             "mitre_refs": [] },
+  "DS2": { "severity": "high",     "owasp_refs": ["A05:2021"],             "mitre_refs": [] },
+  "EP2": { "severity": "critical", "owasp_refs": ["A06:2021"],             "mitre_refs": [] }
+}

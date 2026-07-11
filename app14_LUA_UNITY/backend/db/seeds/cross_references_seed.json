@@ -1,0 +1,26 @@
+[
+  {
+    "sourceCode": "A03:2021",
+    "targetCode": "LLM01:2025",
+    "relationshipType": "related",
+    "description": "Both are injection-class attacks: untrusted input alters the interpreter's (or model's) intended behavior instead of being treated as inert data."
+  },
+  {
+    "sourceCode": "A03:2021",
+    "targetCode": "LLM05:2025",
+    "relationshipType": "related",
+    "description": "LLM05 is effectively injection at the output boundary: unsanitized model output reaching a downstream interpreter (shell, query, DOM) the same way unsanitized user input does in classic injection."
+  },
+  {
+    "sourceCode": "A06:2021",
+    "targetCode": "LLM03:2025",
+    "relationshipType": "equivalent",
+    "description": "Both describe compromise via a third-party dependency the application did not fully vet — a library in A06, a pretrained model/dataset/adapter in LLM03."
+  },
+  {
+    "sourceCode": "A01:2021",
+    "targetCode": "LLM06:2025",
+    "relationshipType": "related",
+    "description": "Both concern granting more scope or permission than a task requires: object-level in A01 (broken access control), tool/action-level in LLM06 (excessive agentic autonomy)."
+  }
+]

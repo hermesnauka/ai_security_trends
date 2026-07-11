@@ -1,0 +1,12 @@
+{
+  "PC2":  { "severity": "medium", "owasp_refs": ["MASVS-STORAGE"],  "mitre_refs": [] },
+  "PC3":  { "severity": "medium", "owasp_refs": ["MASVS-STORAGE"],  "mitre_refs": [] },
+  "PC4":  { "severity": "high",   "owasp_refs": ["MASVS-PLATFORM"], "mitre_refs": [] },
+  "PCJ":  { "severity": "high",   "owasp_refs": ["MASVS-CODE"],     "mitre_refs": [] },
+  "AA4":  { "severity": "high",   "owasp_refs": ["MASVS-AUTH"],     "mitre_refs": [] },
+  "AA8":  { "severity": "high",   "owasp_refs": ["MASVS-PLATFORM"], "mitre_refs": [] },
+  "NS2":  { "severity": "medium", "owasp_refs": ["MASVS-STORAGE"],  "mitre_refs": [] },
+  "RS2":  { "severity": "medium", "owasp_refs": ["MASVS-RESILIENCE"], "mitre_refs": [] },
+  "CRM2": { "severity": "high",   "owasp_refs": ["MASVS-CRYPTO"],   "mitre_refs": [] },
+  "CM2":  { "severity": "low",    "owasp_refs": ["MASVS-STORAGE"],  "mitre_refs": [] }
+}

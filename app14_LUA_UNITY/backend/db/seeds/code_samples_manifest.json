@@ -1,0 +1,502 @@
+[
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "python",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: string-concatenated query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "python/sql-injection-prevention_attack_demo.py",
+    "frameworkHint": "Django ORM raw cursor",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "python",
+    "sampleType": "defense",
+    "title": "Secure: parameterized query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "python/sql-injection-prevention_defense.py",
+    "frameworkHint": "Django ORM raw cursor",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "java",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: string-concatenated query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "java/sql-injection-prevention_attack_demo.java",
+    "frameworkHint": "JDBC",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "java",
+    "sampleType": "defense",
+    "title": "Secure: parameterized query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "java/sql-injection-prevention_defense.java",
+    "frameworkHint": "JDBC",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "go",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: string-concatenated query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "go/sql-injection-prevention_attack_demo.go",
+    "frameworkHint": "database/sql + pgx",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "go",
+    "sampleType": "defense",
+    "title": "Secure: parameterized query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "go/sql-injection-prevention_defense.go",
+    "frameworkHint": "database/sql + pgx",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "scala",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: string-concatenated query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "scala/sql-injection-prevention_attack_demo.scala",
+    "frameworkHint": "Slick 3.x",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "scala",
+    "sampleType": "defense",
+    "title": "Secure: parameterized query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "scala/sql-injection-prevention_defense.scala",
+    "frameworkHint": "Slick 3.x",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "lua",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: string-concatenated query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "lua/sql-injection-prevention_attack_demo.lua",
+    "frameworkHint": "OpenResty + LuaSQL",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "sql-injection-prevention",
+    "language": "lua",
+    "sampleType": "defense",
+    "title": "Secure: parameterized query",
+    "description": "Demonstrates building a SQL query by string concatenation vs. binding user input through a parameterized placeholder.",
+    "file": "lua/sql-injection-prevention_defense.lua",
+    "frameworkHint": "OpenResty + LuaSQL",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "python",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: no ownership check (IDOR)",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "python/broken-access-control-check_attack_demo.py",
+    "frameworkHint": "Django ORM",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "python",
+    "sampleType": "defense",
+    "title": "Secure: ownership-scoped query",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "python/broken-access-control-check_defense.py",
+    "frameworkHint": "Django ORM",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "java",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: no ownership check (IDOR)",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "java/broken-access-control-check_attack_demo.java",
+    "frameworkHint": "Spring Boot 3.3 + Spring Security 6 + Spring Data JPA",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "java",
+    "sampleType": "defense",
+    "title": "Secure: ownership-scoped query",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "java/broken-access-control-check_defense.java",
+    "frameworkHint": "Spring Boot 3.3 + Spring Security 6 + Spring Data JPA",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "go",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: no ownership check (IDOR)",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "go/broken-access-control-check_attack_demo.go",
+    "frameworkHint": "chi router",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "go",
+    "sampleType": "defense",
+    "title": "Secure: ownership-scoped query",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "go/broken-access-control-check_defense.go",
+    "frameworkHint": "chi router",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "scala",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: no ownership check (IDOR)",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "scala/broken-access-control-check_attack_demo.scala",
+    "frameworkHint": "http4s",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "scala",
+    "sampleType": "defense",
+    "title": "Secure: ownership-scoped query",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "scala/broken-access-control-check_defense.scala",
+    "frameworkHint": "http4s",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "lua",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: no ownership check (IDOR)",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "lua/broken-access-control-check_attack_demo.lua",
+    "frameworkHint": "OpenResty",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "broken-access-control-check",
+    "language": "lua",
+    "sampleType": "defense",
+    "title": "Secure: ownership-scoped query",
+    "description": "Demonstrates fetching a resource by id alone vs. scoping the lookup to the authenticated user (IDOR prevention).",
+    "file": "lua/broken-access-control-check_defense.lua",
+    "frameworkHint": "OpenResty",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "python",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: untrusted content merged into system prompt",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "python/prompt-injection-defense_attack_demo.py",
+    "frameworkHint": "LLM chat client (OpenAI-style messages API)",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "python",
+    "sampleType": "defense",
+    "title": "Secure: untrusted content isolated as user-turn data",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "python/prompt-injection-defense_defense.py",
+    "frameworkHint": "LLM chat client (OpenAI-style messages API)",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "java",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: untrusted content merged into system prompt",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "java/prompt-injection-defense_attack_demo.java",
+    "frameworkHint": "Spring AI ChatClient",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "java",
+    "sampleType": "defense",
+    "title": "Secure: untrusted content isolated as user-turn data",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "java/prompt-injection-defense_defense.java",
+    "frameworkHint": "Spring AI ChatClient",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "go",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: untrusted content merged into system prompt",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "go/prompt-injection-defense_attack_demo.go",
+    "frameworkHint": "LLM chat client",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "go",
+    "sampleType": "defense",
+    "title": "Secure: untrusted content isolated as user-turn data",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "go/prompt-injection-defense_defense.go",
+    "frameworkHint": "LLM chat client",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "scala",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: untrusted content merged into system prompt",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "scala/prompt-injection-defense_attack_demo.scala",
+    "frameworkHint": "ZIO 2 LLM client",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "scala",
+    "sampleType": "defense",
+    "title": "Secure: untrusted content isolated as user-turn data",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "scala/prompt-injection-defense_defense.scala",
+    "frameworkHint": "ZIO 2 LLM client",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "lua",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: untrusted content merged into system prompt",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "lua/prompt-injection-defense_attack_demo.lua",
+    "frameworkHint": "OpenResty LLM proxy",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "prompt-injection-defense",
+    "language": "lua",
+    "sampleType": "defense",
+    "title": "Secure: untrusted content isolated as user-turn data",
+    "description": "Demonstrates concatenating untrusted retrieved content into the prompt vs. isolating it as untrusted user-turn data.",
+    "file": "lua/prompt-injection-defense_defense.lua",
+    "frameworkHint": "OpenResty LLM proxy",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "python",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unlimited LLM calls per client",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "python/rate-limiting-unbounded-consumption_attack_demo.py",
+    "frameworkHint": "Flask + Flask-Limiter",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "python",
+    "sampleType": "defense",
+    "title": "Secure: per-client rate limit",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "python/rate-limiting-unbounded-consumption_defense.py",
+    "frameworkHint": "Flask + Flask-Limiter",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "java",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unlimited LLM calls per client",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "java/rate-limiting-unbounded-consumption_attack_demo.java",
+    "frameworkHint": "Spring Boot 3.3 + Resilience4j",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "java",
+    "sampleType": "defense",
+    "title": "Secure: per-client rate limit",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "java/rate-limiting-unbounded-consumption_defense.java",
+    "frameworkHint": "Spring Boot 3.3 + Resilience4j",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "go",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unlimited LLM calls per client",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "go/rate-limiting-unbounded-consumption_attack_demo.go",
+    "frameworkHint": "chi + golang.org/x/time/rate",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "go",
+    "sampleType": "defense",
+    "title": "Secure: per-client rate limit",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "go/rate-limiting-unbounded-consumption_defense.go",
+    "frameworkHint": "chi + golang.org/x/time/rate",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "scala",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unlimited LLM calls per client",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "scala/rate-limiting-unbounded-consumption_attack_demo.scala",
+    "frameworkHint": "ZIO 2 RateLimiter",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "scala",
+    "sampleType": "defense",
+    "title": "Secure: per-client rate limit",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "scala/rate-limiting-unbounded-consumption_defense.scala",
+    "frameworkHint": "ZIO 2 RateLimiter",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "lua",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unlimited LLM calls per client",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "lua/rate-limiting-unbounded-consumption_attack_demo.lua",
+    "frameworkHint": "OpenResty + lua-resty-limit-req",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "rate-limiting-unbounded-consumption",
+    "language": "lua",
+    "sampleType": "defense",
+    "title": "Secure: per-client rate limit",
+    "description": "Demonstrates an unbounded LLM-backed endpoint vs. one gated by a per-client rate limiter.",
+    "file": "lua/rate-limiting-unbounded-consumption_defense.lua",
+    "frameworkHint": "OpenResty + lua-resty-limit-req",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "python",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unpinned dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "python/supply-chain-dependency-integrity_attack_demo.py",
+    "frameworkHint": "pip / requirements.txt",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "python",
+    "sampleType": "defense",
+    "title": "Secure: pinned + hash/lockfile-verified dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "python/supply-chain-dependency-integrity_defense.py",
+    "frameworkHint": "pip / requirements.txt",
+    "versionNote": "Python 3.12, Django 5.1 / Flask 3.0"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "java",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unpinned dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "java/supply-chain-dependency-integrity_attack_demo.java",
+    "frameworkHint": "Maven + OWASP Dependency-Check",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "java",
+    "sampleType": "defense",
+    "title": "Secure: pinned + hash/lockfile-verified dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "java/supply-chain-dependency-integrity_defense.java",
+    "frameworkHint": "Maven + OWASP Dependency-Check",
+    "versionNote": "Java 21, Spring Boot 3.3"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "go",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unpinned dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "go/supply-chain-dependency-integrity_attack_demo.go",
+    "frameworkHint": "Go modules (go.sum)",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "go",
+    "sampleType": "defense",
+    "title": "Secure: pinned + hash/lockfile-verified dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "go/supply-chain-dependency-integrity_defense.go",
+    "frameworkHint": "Go modules (go.sum)",
+    "versionNote": "Go 1.23"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "scala",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unpinned dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "scala/supply-chain-dependency-integrity_attack_demo.scala",
+    "frameworkHint": "sbt + sbt-dependency-check",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "scala",
+    "sampleType": "defense",
+    "title": "Secure: pinned + hash/lockfile-verified dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "scala/supply-chain-dependency-integrity_defense.scala",
+    "frameworkHint": "sbt + sbt-dependency-check",
+    "versionNote": "Scala 2.13 / 3.x, ZIO 2 / Slick 3.x / http4s (per mitigation)"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "lua",
+    "sampleType": "attack_demo",
+    "title": "Vulnerable: unpinned dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "lua/supply-chain-dependency-integrity_attack_demo.lua",
+    "frameworkHint": "LuaRocks",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  },
+  {
+    "mitigationSlug": "supply-chain-dependency-integrity",
+    "language": "lua",
+    "sampleType": "defense",
+    "title": "Secure: pinned + hash/lockfile-verified dependency",
+    "description": "Demonstrates an unpinned/open-range dependency declaration vs. a pinned, hash/lockfile-verified one.",
+    "file": "lua/supply-chain-dependency-integrity_defense.lua",
+    "frameworkHint": "LuaRocks",
+    "versionNote": "OpenResty 1.25 (LuaJIT), lua-resty-limit-req 0.3"
+  }
+]
