@@ -1,0 +1,136 @@
+name: CI (PLAN.md Phase 7 — hardening, testing, release)
+
+# Full pipeline order per SDLC_analysis.md's stated CI sequence:
+#   composer install -> phpcs -> phpstan -> wp-env/MySQL -> phpunit (+ eris)
+#   -> codeception (acceptance) -> composer audit + WPScan -> Playwright E2E.
+# None of these jobs have ever actually run in this repo — this sandbox has
+# no PHP/Composer/MySQL/Node available to execute them (see CLAUDE.md's
+# Phase 7 section) — this is real, structurally-correct CI configuration
+# ready for the first real push, not a verified-passing pipeline.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app09_php_WORDPRESS/wp-content/plugins/securepress-2026/**"
+  pull_request:
+    paths:
+      - "app09_php_WORDPRESS/wp-content/plugins/securepress-2026/**"
+
+defaults:
+  run:
+    working-directory: app09_php_WORDPRESS/wp-content/plugins/securepress-2026
+
+jobs:
+  sast:
+    name: SAST (PHPCS/WPCS + PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - name: PHPCS / WordPress Coding Standards
+        run: vendor/bin/phpcs --standard=phpcs.xml .
+      - name: PHPStan (includes the custom NoIntegrityVerifierInRestApi rule, D-03)
+        run: vendor/bin/phpstan analyse --error-format=github
+
+  sca:
+    name: SCA (composer audit + WPScan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+      - run: composer install --no-interaction --prefer-dist
+      - name: composer audit
+        run: composer audit --no-interaction
+      - name: WPScan CLI (plugin/theme/core CVE database)
+        env:
+          WPSCAN_API_TOKEN: ${{ secrets.WPSCAN_API_TOKEN }}
+        run: |
+          if [ -z "$WPSCAN_API_TOKEN" ]; then
+            echo "::warning::WPSCAN_API_TOKEN not set — skipping WPScan (add the secret to enable this SCA source)."
+            exit 0
+          fi
+          docker run --rm wpscanteam/wpscan --url "${{ vars.STAGING_URL }}" --api-token "$WPSCAN_API_TOKEN" --format cli
+
+  unit-and-property:
+    name: PHPUnit unit + eris property tests
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: wordpress_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: pcov
+      - run: composer install --no-interaction --prefer-dist
+      - name: PHPUnit (unit + property, coverage on includes/service per NFR-04.1)
+        env:
+          WP_TESTS_DB_HOST: 127.0.0.1
+          WP_TESTS_DB_NAME: wordpress_test
+          WP_TESTS_DB_USER: root
+        run: vendor/bin/phpunit --coverage-text
+
+  acceptance:
+    name: wp-browser/Codeception acceptance suite
+    runs-on: ubuntu-latest
+    needs: [unit-and-property]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: wordpress
+        ports: ["3306:3306"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+      - run: composer install --no-interaction --prefer-dist
+      - name: Bring up WordPress (docker compose, per PLAN.md Phase 1)
+        working-directory: app09_php_WORDPRESS
+        run: docker compose up -d --build
+      - name: Codeception acceptance suite
+        run: vendor/bin/codecept run acceptance
+
+  e2e:
+    name: Playwright E2E (one scenario per user story)
+    runs-on: ubuntu-latest
+    needs: [acceptance]
+    defaults:
+      run:
+        working-directory: app09_php_WORDPRESS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npx playwright install --with-deps chromium firefox
+      - name: Bring up WordPress (docker compose)
+        run: docker compose up -d --build
+      - name: Run E2E suite
+        env:
+          SECUREPRESS_BASE_URL: http://localhost:8009
+          SECUREPRESS_ADMIN_USER: admin
+          SECUREPRESS_ADMIN_PASSWORD: ${{ secrets.SECUREPRESS_TEST_ADMIN_PASSWORD }}
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: app09_php_WORDPRESS/playwright-report/

@@ -1,0 +1,29 @@
+name: OWASP ZAP full active scan (PLAN.md Phase 7)
+
+# Runs against a deployed staging environment, not this repo's CI containers
+# directly — a full active scan is intrusive (it deliberately sends attack
+# payloads) and needs a real, disposable target, unlike the other CI jobs in
+# ci.yml which spin up an ephemeral local WordPress. Triggered manually or on
+# a schedule, never on every push/PR.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1" # weekly, Monday 03:00 UTC
+
+jobs:
+  zap-full-scan:
+    name: ZAP full active scan against staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full active scan
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: ${{ vars.STAGING_URL }}
+          fail_action: true
+          cmd_options: "-a"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: report_html.html

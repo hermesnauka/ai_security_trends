@@ -1,0 +1,21 @@
+actor: AcceptanceTester
+modules:
+    enabled:
+        - WPDb:
+            dsn: 'mysql:host=%WP_DB_HOST%;dbname=%WP_DB_NAME_TEST%'
+            user: '%WP_DB_USER%'
+            password: '%WP_DB_PASSWORD%'
+            dump: tests/_data/dump.sql
+            populate: true
+            cleanup: true
+            url: '%WP_URL%'
+            tablePrefix: '%WP_TABLE_PREFIX%'
+        - WPBrowser:
+            url: '%WP_URL%'
+        - WPFilesystem:
+            wpRootFolder: '%WP_ROOT_FOLDER%'
+            plugins: '/wp-content/plugins'
+            muPlugins: '/wp-content/mu-plugins'
+            themes: '/wp-content/themes'
+            uploads: '/wp-content/uploads'
+        - \Helper\Acceptance

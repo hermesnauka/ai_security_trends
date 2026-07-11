@@ -15,7 +15,9 @@
         "giorgiosironi/eris": "^0.15",
         "squizlabs/php_codesniffer": "^3.10",
         "wp-coding-standards/wpcs": "^3.1",
-        "phpstan/phpstan": "^1.12"
+        "phpstan/phpstan": "^1.12",
+        "codeception/codeception": "^5.1",
+        "lucatume/wp-browser": "^3.5"
     },
     "autoload": {
         "psr-4": {
@@ -23,9 +25,9 @@
         }
     },
     "autoload-dev": {
-        "psr-4": {
-            "SecurePress\\Tests\\": "tests/"
-        }
+        "classmap": [
+            "tests/"
+        ]
     },
     "config": {
         "allow-plugins": {

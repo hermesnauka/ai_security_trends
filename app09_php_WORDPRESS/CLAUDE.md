@@ -132,13 +132,57 @@ D-02/D-04's constraints. Specifics worth knowing:
   this phase introduced, using the same one-off Python tooling (see the i18n note above) —
   independently re-verified with Python's `gettext` module after regenerating.
 
+**Hardening/testing/release (PLAN.md §6 Phase 7) is now built too — read this before trusting
+any "it's tested" assumption.** This sandbox has no PHP, Composer, MySQL, WordPress, Node
+(it does, actually — see below), WPScan, or ZAP runtime capable of *executing* any of this;
+everything in this paragraph is real, structurally-correct source that has never been run
+end-to-end, same caveat as `docker-compose.yml` since Phase 1:
+
+- **PHPUnit** (`tests/unit/`, 11 test classes) — bootstrap (`tests/bootstrap.php`) uses
+  `wp-phpunit/wp-phpunit` so `composer install && vendor/bin/phpunit` is self-contained, no
+  system-wide WP checkout needed. Covers `Framework_Service`, `Threat_Service` (incl. locale
+  fallback), `Card_Service` (incl. the FR-19.2(b) severity-key-omission check),
+  `Mitigation_Service` (incl. the `lua-resty-limit-req` assertion), `Search_Service`,
+  `Matrix_Service` (incl. the honest-empty-state assertion), `Reference_Validator`,
+  `Card_Loader`, `Integrity_Verifier`, `Rate_Limiter`, and REST controllers
+  (`ThreatControllerTest`, `ExportControllerTest`, `StrideHeatmapControllerTest` — the last one
+  asserts 401 vs 403 are genuinely different responses). **`DesignHarmConstraintTest` is the
+  one test in this whole project that actually exercises the D-04 `CHECK`-constraint claim** —
+  a raw `$wpdb->query()` bypassing every repository/service, same as the sketch in
+  `user_stories+tests.md`.
+- **eris property tests** (`tests/property/`) — `CardLoaderPropertyTest` writes randomly-keyed
+  temp deck files directly under `data/cornucopia/` (Card_Loader has no injectable base path)
+  and cleans them up in a `finally` block; `ReferenceValidatorPropertyTest` asserts any string
+  outside the fixed allowlist is rejected. Both use explicit try/catch/fail instead of
+  `expectException()`, since the latter isn't safe to call once per eris iteration.
+- **wp-browser/Codeception** (`codeception.yml`, `tests/acceptance/`, 5 Cest files) —
+  `AttackDemoConfirmationCest`, `DigitalHarmsCest`, `NoJsFilteringCest`, `RateLimitCest`,
+  `ThreatBrowserCest`. `tests/Support/AcceptanceTester.php` is hand-written (normally
+  `codecept build` generates it — not runnable here) and safe to overwrite.
+- **Playwright E2E** (`e2e/` at the **app root**, not inside the plugin — a Node/TypeScript
+  toolchain, not a WP concern) — one spec file per user story, US-01 through US-19 (US-08 is
+  split into an unauthenticated and a `-authenticated` file so the 401-vs-logged-in-admin cases
+  don't conflict under Playwright's per-project `storageState`; see `auth.setup.ts` and the
+  `chromium-authenticated` project in `playwright.config.ts`). **This is the one part of Phase
+  7 actually verified in this session** — `npx tsc --noEmit` was run for real (TypeScript 7.0.2
+  + `@playwright/test` + `@types/node`, network access worked) against all 20 spec files with
+  zero errors, then the temporary `node_modules`/`package-lock.json` were deleted since they
+  aren't meant to be committed.
+- **CI** (`.github/workflows/ci.yml`, `zap-scan.yml`, plus `i18n-check.yml` from Phase 5) — the
+  full SAST → SCA → PHPUnit → Codeception → Playwright pipeline `SDLC_analysis.md` describes,
+  wired as real GitHub Actions jobs. ZAP's full active scan is separate (`workflow_dispatch` +
+  weekly schedule) since it needs a deployed staging target, not an ephemeral CI container.
+  **None of these workflows have ever executed in this repo.**
+- **Release process** was already documented in `SDLC_analysis.md` §5 (Deployment) from the
+  original authoring — pinned versions, staging-first rollout, not WordPress's default
+  auto-update-everything — so nothing new was added there.
+
 **Still not built:** mitigations/code samples for any threat or card beyond the 5 from Phase
 4, admin screens (`includes/admin/` is an empty directory), the dedicated
-`stride-catalogue.php`/`devops-security.php` templates (still simplified to `suit-archive.php`,
-per the Phase 3 note above), and all tests (`tests/`, `e2e/` don't exist yet — nothing in this
-plugin has been executed against a real WordPress+MySQL instance; no `composer install` has
-been run either). Verify against the filesystem, not this paragraph, before assuming a
-later-phase feature exists.
+`stride-catalogue.php`/`devops-security.php` templates (still simplified to `suit-archive.php`).
+Every `PLAN.md` §6 phase now has *some* real implementation, but coverage within each phase is
+consistently a representative slice, not exhaustive — verify against the filesystem, not this
+paragraph, before assuming full completeness of any feature.
 
 ## Architecture: one WordPress plugin, not a backend + SPA
 

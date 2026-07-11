@@ -252,3 +252,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+######### SecurePress 2026 (Playwright E2E)
+playwright-report/
+test-results/
+e2e/.auth/
