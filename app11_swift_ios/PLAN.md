@@ -1,7 +1,7 @@
 # SwiftGuard 2026 — Application Development Plan
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Status:** Living document — updated after each sprint planning session
 **Directory:** `app11_swift_ios`
 **Sibling projects:** `app01_react`/`app02_angular` (Java/Spring Boot), `app03_python_django` (Python/Django), `app04_scala_react` (Scala/ZIO), `app05_go_react` (Go), `app06_HASKELL_react` (Haskell), `app07_rust_react` (Rust), `app08_cpp_react` (C++), `app09_php_WORDPRESS` (PHP/WordPress), `app10_csharp_react` (C#/.NET)
@@ -20,6 +20,19 @@ This application is a **native iOS app, written entirely in Swift**, using **Swi
 **A second, equally important reframing:** this app's own attack surface is best described by **OWASP MASVS** and the **Mobile App Cornucopia deck** (`mobileapp-cards-1.1-en.yaml`, suits PC/AA/NS/RS/CRM/CM) that this app itself teaches — not the OWASP Web Top 10 every prior sibling's own SSDLC section centered on. This is the first app in the series where the educational content and the application's own threat model are, to a significant degree, **the same document** (§11, `SDLC_analysis.md` Phase 0/7).
 
 **Note on code samples:** the application still *teaches* countermeasures in five languages — Python, Java, Go, Scala, and Lua (see §10) — because that is separate, deliberately polyglot **content**, not the application's own runtime. None of those five languages, and no web backend language at all, is used in this application's own implementation; it is Swift only (plus a small amount of Apple's own declarative UI/data DSLs, which are Swift language features, not separate languages).
+
+---
+
+## 0.1 Source Material — What It Actually Contains (read before treating any framework as "already documented")
+
+Two source locations exist one level up, at `../docs/`:
+
+| Source | What it actually covers | What it does NOT cover |
+|---|---|---|
+| `docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md` (~3,000 lines, mostly Polish) | OWASP LLM Top 10 (LLM01–LLM10, full descriptions), OWASP Web Top 10 (A01–A10, full descriptions), MITRE ATLAS (tactic IDs TA0003/TA0008/TA0012/TA0013/TA0014, technique IDs incl. AML.T0010, AML.T0020, AML.T0024, AML.T0029, AML.T0043, AML.T0051), CompTIA Security+ SY0-701 and SecAI+ topic buckets, a STRIDE↔OWASP mapping table, one worked multi-stage attack chain, and one Java/LangChain4j code sample. | OWASP Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, Automated Threats (OAT), MASVS — **none of these are enumerated in this file at all**. No Python/Go/Scala/Lua code anywhere in it. No mobile/iOS-specific content of any kind. |
+| `docs/OWASP_stories/*.yaml` (six Cornucopia-family decks) | Card `id`, `value`, `url` (where present), and a free-text `desc`/`misc` scenario per card, across all six decks' suits. | **No `severity`, `card_kind`, design-harm/technical-threat marker, or OWASP/MITRE/CWE cross-reference field exists in any of the six files.** `url`, where present, always points back to `cornucopia.owasp.org`/`digitalbenefits.uk`, never to an external framework ID. |
+
+**Consequence for this plan, stated plainly:** the framework families with no numbered IDs in either source (Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, OAT, MASVS) are covered here by (a) mapping the relevant Cornucopia suit (AAI, DVO+BOT, FRE, PC/AA/NS/RS/CRM/CM) to the corresponding published OWASP list, and (b) hand-authoring the specific numbered mappings, severities, and `CardKind` classification during content curation — not by extracting them from a source file that doesn't contain them. Every `severity` case and every `owaspRefs`/`mitreRefs` value on a `CornucopiaCard` is **curated content the maintainers write**, validated against an allowlist at seed time, not parsed out of the YAML. `CardKind.designHarm` for every card in `dbd-cards-1.0-en.yaml` is likewise assigned by `ContentSeeder` based on *which file a card came from*, never read from a field in that file (§4 D-03/D-06 — the raw YAML simply has no such field to read). No Python/Go/Scala/Lua/Java code sample anywhere in this app is extracted from source material either — all five languages' samples (§10) are original content authored for this project, the same as every prior sibling with this requirement.
 
 ---
 

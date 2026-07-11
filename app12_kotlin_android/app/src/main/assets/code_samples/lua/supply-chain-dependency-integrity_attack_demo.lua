@@ -1,0 +1,3 @@
+-- VULNERABLE — do not use in production
+-- luarocks install lua-resty-jwt
+-- (no version pin: a future malicious release of the same rock name is installed silently on the next rebuild)

@@ -1,9 +1,11 @@
 # SwiftGuard 2026 — User Stories & TDD Test Plan
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Stack:** Swift 6, SwiftUI + SwiftData (native iOS, no server backend)
 **Test frameworks:** `XCTest` (unit/integration) + `SwiftCheck` (property-based) + `XCUITest` (native UI/E2E — replaces Playwright, since there is no browser to drive)
+
+**Uwaga o pochodzeniu danych (zobacz `PLAN.md` §0.1):** surowe pliki `docs/OWASP_stories/*.yaml` zawierają wyłącznie pola `id`/`value`/`url`/`desc`/`misc` — żaden plik źródłowy nie ma pola `severity`, `CardKind` ani referencji do OWASP/MITRE/CWE. Mapowania OWASP/MITRE w tabelach poniżej są treścią kuratorowaną przez zespół, nie wartościami wyodrębnionymi z YAML.
 
 ---
 

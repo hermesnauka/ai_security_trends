@@ -1,0 +1,4 @@
+-- SECURE pattern
+-- WHY: pinning the exact version means a rebuild never silently pulls a different (and potentially compromised) release
+-- luarocks install lua-resty-jwt 0.2.3
+-- rockspec dependency line: "lua-resty-jwt == 0.2.3"

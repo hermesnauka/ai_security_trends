@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KotlinGuard 2026</string>
+    <string name="frameworks_title">Frameworki Bezpieczeństwa</string>
+    <string name="threats_title">Zagrożenia</string>
+    <string name="search_title">Szukaj</string>
+    <string name="bookmarks_title">Zakładki</string>
+    <string name="about_title">O aplikacji</string>
+    <string name="digital_harms_title">Digital-by-Default Harms</string>
+    <string name="no_results_for_filters">Brak wyników dla podanych filtrów.</string>
+    <string name="no_mitigations_yet">Brak jeszcze zdefiniowanych mitigacji dla tego zagrożenia.</string>
+    <string name="no_code_samples_yet">Brak jeszcze próbek kodu dla tej mitigacji.</string>
+    <string name="attack_demo_label">ATTACK DEMO — kod podatny, nie używać w produkcji</string>
+    <string name="attack_demo_reveal">Pokaż kod (VULNERABLE)</string>
+    <string name="attack_demo_confirm_message">Ten kod celowo demonstruje podatność. Potwierdź, aby go zobaczyć.</string>
+    <string name="digital_harms_disclaimer">Ta talia nie jest listą podatności technicznych z poziomem severity — modeluje harmy projektowe (wykluczenie cyfrowe, nieprzejrzyste projektowanie) w usługach publicznych, mapowane na OWASP A04:2021 Insecure Design.</string>
+</resources>

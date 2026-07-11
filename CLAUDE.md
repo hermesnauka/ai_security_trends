@@ -21,8 +21,8 @@ detail — read this file first, then that one.
 | `app08_cpp_react` | C++ (Drogon) + React | backend+frontend built; HS256, matches app01; Drogon's own async ORM used instead of the `libpqxx`/`sqlpp11` PLAN.md once proposed |
 | `app09_php_WORDPRESS` | PHP/WordPress plugin | extensive WordPress plugin scaffold built (ingestion, mitigations/code samples, i18n, search/export/matrix, full-but-unexecuted test suite) — see its own `CLAUDE.md` for the representative-slice scope of each piece |
 | `app10_csharp_react` | C#/.NET 9 + React | backend+frontend built; HS256, matches app01 |
-| `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | nothing built yet (planning docs only); no API — offline-only |
-| `app12_kotlin_android` | native Android (Compose/Room) | nothing built yet (planning docs only); no API — offline-only, structural twin of app11 |
+| `app11_swift_ios` | native iOS (SwiftUI/SwiftData) | real Swift source built (SwiftData models, ContentSeeder, Views) but **no `.xcodeproj` and never compiled** — no API, offline-only |
+| `app12_kotlin_android` | native Android (Compose/Room) | real Kotlin source built (Room entities/DAOs, ContentSeeder, repositories, Compose screens, `:data`/`:ui`/`:app` Gradle modules) but **never assembled/compiled** — no API, offline-only, structural twin of app11 |
 
 This table was last verified against every app's actual filesystem/source on 2026-07-11.
 
@@ -91,3 +91,11 @@ Postgres via any one app's `local-dev-down.sh` affects every other app
 currently using it. A real Docker Compose deployment (`docker compose up
 --build`, per each app's own `docker-compose.yml`) gives each app its own
 container + volume with no such collision.
+
+## Operating mode
+
+Default to acting without asking for confirmation on routine build/doc work in this repo
+(scaffolding new app directories, editing per-app `CLAUDE.md` files, adding source files,
+running local builds/tests). Still ask before anything destructive or hard-to-reverse
+(force-push, deleting branches/files, `git reset --hard`, overwriting uncommitted work) —
+this default doesn't extend to those regardless of how it was phrased.

@@ -1,8 +1,10 @@
 # KotlinGuard 2026 — Requirements Specification
 
-**Version:** 1.0
-**Date:** 2026-07-07
-**Companion document:** `PLAN.md`
+**Version:** 2.0
+**Date:** 2026-07-11
+**Companion document:** `PLAN.md` (see §0.1 for exactly what the shared `../docs/` source material does and does not contain)
+
+**Provenance note:** the source mapping document fully covers OWASP LLM Top 10, OWASP Web Top 10, MITRE ATLAS, and CompTIA Security+/SecAI+; it does **not** cover Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, OAT, or MASVS, and the raw Cornucopia YAML carries no severity/`CardKind`/cross-reference fields at all. Requirements below that depend on data not present in a source file say so rather than implying it was extracted.
 
 ---
 

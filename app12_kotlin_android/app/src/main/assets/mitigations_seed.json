@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "sql-injection-prevention",
+    "threatCode": "A03:2021",
+    "cardId": null,
+    "title": "Use parameterized queries for every database access",
+    "description": "Never build a SQL statement by concatenating untrusted input into the query text. Always use a parameterized/prepared-statement API so the database driver binds values separately from the query's structure.",
+    "mitigationType": "preventive",
+    "effort": "low",
+    "effectiveness": "full"
+  },
+  {
+    "slug": "broken-access-control-check",
+    "threatCode": "A01:2021",
+    "cardId": null,
+    "title": "Enforce object ownership at the query level, not after the fact",
+    "description": "Scope every lookup of a user-owned resource by the authenticated user's identity inside the query itself (e.g. WHERE id = ? AND owner_id = ?), so a guessed or enumerated identifier alone can never return another user's data.",
+    "mitigationType": "preventive",
+    "effort": "medium",
+    "effectiveness": "significant"
+  },
+  {
+    "slug": "prompt-injection-defense",
+    "threatCode": "LLM01:2025",
+    "cardId": null,
+    "title": "Isolate untrusted retrieved content from system instructions",
+    "description": "Never concatenate retrieved/untrusted content directly into the system prompt. Pass it as user-turn data in its own message, and instruct the model explicitly to treat it as data, never as instructions, even if it tries to override that rule.",
+    "mitigationType": "preventive",
+    "effort": "high",
+    "effectiveness": "significant"
+  },
+  {
+    "slug": "rate-limiting-unbounded-consumption",
+    "threatCode": "LLM10:2025",
+    "cardId": "LLM2",
+    "title": "Rate-limit LLM calls per client to bound cost and denial-of-wallet risk",
+    "description": "Apply a per-user or per-IP rate limit (token bucket or leaky bucket) in front of every LLM-backed endpoint, so a single client cannot drive unbounded compute cost or exhaust shared capacity.",
+    "mitigationType": "preventive",
+    "effort": "low",
+    "effectiveness": "significant"
+  },
+  {
+    "slug": "supply-chain-dependency-integrity",
+    "threatCode": "A08:2021",
+    "cardId": null,
+    "title": "Pin exact dependency versions and verify them with a lockfile/hash",
+    "description": "Never resolve dependencies via an open version range or an unpinned \"latest\" tag. Pin an exact, reviewed version and verify it against a lockfile hash (go.sum, requirements.txt --require-hashes, sbt lock, etc.) so a build never silently pulls a different, potentially compromised release.",
+    "mitigationType": "preventive",
+    "effort": "medium",
+    "effectiveness": "significant"
+  }
+]

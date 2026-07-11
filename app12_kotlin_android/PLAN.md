@@ -1,7 +1,7 @@
 # KotlinGuard 2026 — Application Development Plan
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Status:** Living document — updated after each sprint planning session
 **Directory:** `app12_kotlin_android`
 **Sibling projects:** `app01_react`/`app02_angular` (Java/Spring Boot), `app03_python_django` (Python/Django), `app04_scala_react` (Scala/ZIO), `app05_go_react` (Go), `app06_HASKELL_react` (Haskell), `app07_rust_react` (Rust), `app08_cpp_react` (C++), `app09_php_WORDPRESS` (PHP/WordPress), `app10_csharp_react` (C#/.NET), `app11_swift_ios` (Swift/iOS)
@@ -21,6 +21,19 @@ This application is a **native Android app, written entirely in Kotlin**, using 
 - **Distribution via Google Play** involves its own review process (Google Play's automated and human review, plus Play Protect scanning), generally faster and more automated than Apple's App Review, but still a real, external gate this plan budgets for (§13, `SDLC_analysis.md` Phase 5) — the same *category* of external check `app11_swift_ios` introduced to this series, with a different cadence.
 
 **Note on code samples:** the application still *teaches* countermeasures in five languages — Python, Java, Go, Scala, and Lua (see §10) — because that is separate, deliberately polyglot **content**, not the application's own runtime. Kotlin is the JVM-adjacent, but distinct, language actually implementing this app; **Java** remains one of the five sample languages precisely because it is different from Kotlin as a matter of project scope, even though both run on the JVM/ART — the same "sample language ≠ implementation language" rule every sibling has followed is followed here too, and is worth stating explicitly given how close Kotlin and Java are as languages.
+
+---
+
+## 0.1 Source Material — What It Actually Contains (read before treating any framework as "already documented")
+
+Two source locations exist one level up, at `../docs/`:
+
+| Source | What it actually covers | What it does NOT cover |
+|---|---|---|
+| `docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md` (~3,000 lines, mostly Polish) | OWASP LLM Top 10 (LLM01–LLM10, full descriptions), OWASP Web Top 10 (A01–A10, full descriptions), MITRE ATLAS (tactic IDs TA0003/TA0008/TA0012/TA0013/TA0014, technique IDs incl. AML.T0010, AML.T0020, AML.T0024, AML.T0029, AML.T0043, AML.T0051), CompTIA Security+ SY0-701 and SecAI+ topic buckets, a STRIDE↔OWASP mapping table, one worked multi-stage attack chain, and one Java/LangChain4j code sample. | OWASP Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, Automated Threats (OAT), MASVS — **none of these are enumerated in this file at all**. No Python/Go/Scala/Lua code anywhere in it. No mobile/Android-specific content of any kind. |
+| `docs/OWASP_stories/*.yaml` (six Cornucopia-family decks) | Card `id`, `value`, `url` (where present), and a free-text `desc`/`misc` scenario per card, across all six decks' suits. | **No `severity`, `card_kind`, design-harm/technical-threat marker, or OWASP/MITRE/CWE cross-reference field exists in any of the six files.** `url`, where present, always points back to `cornucopia.owasp.org`/`digitalbenefits.uk`, never to an external framework ID. |
+
+**Consequence for this plan, stated plainly:** the framework families with no numbered IDs in either source (Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, OAT, MASVS) are covered here by (a) mapping the relevant Cornucopia suit (AAI, DVO+BOT, FRE, PC/AA/NS/RS/CRM/CM) to the corresponding published OWASP list, and (b) hand-authoring the specific numbered mappings, severities, and `CardKind` classification during content curation — not by extracting them from a source file that doesn't contain them. Every `Severity` value and every `owaspRefs`/`mitreRefs` value on a `CornucopiaCardEntity` is **curated content the maintainers write**, validated against an allowlist at seed time, not parsed out of the YAML. `CardKind.DesignHarm` for every card in `dbd-cards-1.0-en.yaml` is likewise assigned by `ContentSeeder` based on *which file a card came from*, never read from a field in that file (§4 D-03/D-06 — the raw YAML simply has no such field to read). No Python/Go/Scala/Lua/Java code sample anywhere in this app is extracted from source material either — all five languages' samples (§10) are original content authored for this project, the same as `app11_swift_ios` and every prior sibling with this requirement (in fact the identical 50 files, since these samples are language-agnostic educational content, not iOS- or Android-specific).
 
 ---
 

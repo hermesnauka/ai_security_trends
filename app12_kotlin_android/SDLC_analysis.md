@@ -1,7 +1,7 @@
 # KotlinGuard 2026 — SSDLC / SDLC Analysis
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Companion documents:** `PLAN.md`, `requirements.md`, `user_stories+tests.md`
 **Methodology focus:** Agile Scrum with a security-gated Kanban board (as requested — this analysis centers on Agile/Scrum/Kanban, not Waterfall)
 

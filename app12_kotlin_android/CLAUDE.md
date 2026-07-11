@@ -1,71 +1,143 @@
 # KotlinGuard 2026 — Kotlin/Android implementation (app12_kotlin_android)
 
-The native Android implementation — Kotlin, Jetpack Compose, Room. See
-`../CLAUDE.md` for the sibling list — this app is one of the two (with
-`app11_swift_ios`) that deliberately don't follow the shared API contract
-documented there. See `PLAN.md`, `requirements.md`, `SDLC_analysis.md`, and
-`user_stories+tests.md` for the full 19-user-story aspirational end state.
+Native Android: Kotlin 2.0, Jetpack Compose, Room. See `../CLAUDE.md` for the sibling
+list — this app is one of the two (with `app11_swift_ios`, its structural twin) that
+deliberately don't follow the shared API contract documented there.
 
-## Nothing is built yet
+## This is NOT a client of app01's REST API — don't build an API client
 
-This directory currently contains only the four planning docs plus `.gitignore`. **There
-is no Gradle project, no `settings.gradle.kts`, no Android Studio project, no source
-code at all.** Whoever starts building needs to scaffold the Gradle multi-module project
-from scratch per PLAN.md §9 (`:data`, `:ui`, `:app` modules) before anything else is
-possible. Don't assume any class, screen, or entity named in PLAN.md exists — treat every
-code block in that file as a target, not a description of current state.
+Unlike every sibling from `app02` through `app10`, **this app has no client-server model
+at all.** Per `PLAN.md` §0 and §3: no backend framework, no REST API, no Postgres/MySQL,
+no Docker Compose. All data — frameworks, threats, mitigations, card decks, code samples —
+lives on-device in **Room** (embedded SQLite), seeded from JSON/YAML bundled under
+`app/src/main/assets/` by `ContentSeeder` on first launch. There is no ongoing sync of
+core content with any server, ever. The **only** network calls anywhere in this codebase
+would be an *optional*, later-phase Google Sign-In + Cloud Firestore bookmark-sync feature
+(D-07) — **not implemented yet** (see below). Do not point this app at app01's
+`/api/v1/...` endpoints; that contract is irrelevant here.
 
-## Not a client of app01's API — this is fully on-device, offline-first
+## Current state (verify against the filesystem before trusting this)
 
-Unlike most siblings in this repo, this app has **no backend, no REST API, and (with one
-narrow exception) no networking at all**. It never calls `app01_react`'s Spring Boot API
-or any other sibling's backend. All framework/threat/card content ships as bundled
-JSON/YAML assets under `app/src/main/assets/` and is loaded into a local Room (SQLite)
-database by a `ContentSeeder` on first launch — see PLAN.md §3, §6 Phase 1, §12. The
-**only** network-reachable code path in the entire app is an optional, later-phase
-bookmark-sync feature (Google Sign-In + Cloud Firestore, D-07) — core content and every
-other feature work with the `INTERNET` permission absent entirely.
+Planning docs (`PLAN.md`, `requirements.md`, `SDLC_analysis.md`, `user_stories+tests.md`)
+were already excellent before this session and were kept largely intact — only a
+`PLAN.md` §0.1 provenance section was added (what the shared `../docs/` source material
+actually contains vs. what's curated/authored content) plus version bumps, rather than a
+wasteful full rewrite of already-good content.
 
-## Structural twin: app11_swift_ios — read the two plans together
+**Real Kotlin source now exists**, ported/adapted from app09's and app11's equivalent
+pipelines (same underlying OWASP/Cornucopia content, same 50 five-language code samples —
+language-agnostic educational content, reused rather than re-authored) as a genuine
+three-module Gradle project (`:data`, `:ui`, `:app`, PLAN.md §9):
 
-This app is the direct Android counterpart of `../app11_swift_ios` (native iOS, same
-"no client-server model at all" departure). PLAN.md is written to be read *alongside*
-app11's — most design-decision sections (§4, D-01 through D-08) explicitly call out
-where Android's answer matches iOS's and where it genuinely differs. The one to
-remember when writing serialization code: **`kotlinx.serialization`'s default `Json` is
-strict-by-default** (`ignoreUnknownKeys = false` — an unrecognized key throws
-`SerializationException`), the **opposite default** from Swift's `Codable`, which is
-lenient-by-default and silently ignores unknown keys unless you write a custom decoder.
-Never set `ignoreUnknownKeys = true` (PLAN.md D-06); a planned `detekt` rule is meant to
-flag it if someone does.
+- **`:data`**: all 8 `@Entity` classes from `PLAN.md` §5 (`FrameworkEntity`,
+  `ThreatEntity`, `CornucopiaCardEntity`, `MitigationEntity`, `CodeSampleEntity`,
+  `CrossReferenceEntity`, `ContentHashEntity`, `BookmarkEntity`) with Room
+  `@TypeConverter`s for list/enum-hierarchy columns; `CardKind` (D-03, the `sealed
+  interface` exhaustive-`when` guarantee); kotlinx.serialization + kaml decoders for the
+  six raw Cornucopia YAML decks — no hand-written unknown-key check needed here (D-06:
+  kotlinx.serialization/kaml reject unrecognized keys by default, the opposite of Swift's
+  lenient `Codable`); `ReferenceValidator` (allowlist check for curated OWASP/MITRE refs);
+  `CardLoader` (merges raw YAML + curation JSON + Polish translations, rejects orphaned
+  curation/translation entries referencing a nonexistent `card_id`); `IntegrityChecker`
+  (SHA-256 check against bundled `hashes.json` using `java.security.MessageDigest`,
+  upserts `ContentHashEntity` rows); `ContentSeeder` (the single entry point tying all of
+  the above together, called from the `:app` composition root); Room `@Dao` interfaces for
+  all 8 entities; and Room-backed repository implementations for every contract in
+  `PLAN.md` §7 (`RoomFrameworkRepository`, `RoomThreatRepository`, `RoomCardRepository`,
+  `RoomMitigationRepository`, `RoomMatrixRepository`, `RoomSearchRepository`,
+  `RoomBookmarkRepository`); a `DataContainer` manual composition class (no Hilt/Koin —
+  PLAN.md never asked for a DI framework).
+- **`:ui`**: `LocaleManager` (D-05 — a `@Stable` Compose state holder tracking the
+  current locale; the model layer's `localizedDescription(locale)` methods already use it
+  correctly, but Android's `AppCompatDelegate.setApplicationLocales` per-app-locale wiring
+  for UI-chrome `strings.xml` resources is *not* implemented — same scope gap as app11's
+  `LocalizationManager`), six `ViewModel`s (`FrameworkListViewModel`,
+  `ThreatBrowserViewModel` with a 300ms debounce, `ThreatDetailViewModel`,
+  `CardSuitViewModel`, `SearchViewModel`, `BookmarksViewModel`), and Compose screens
+  covering `RootScreen`'s bottom-navigation shell, framework/threat/card browsing, threat
+  detail (mitigations + language-tabbed code samples with a `D-08` attack-demo
+  confirmation dialog + cross-references), the Digital-by-Default Harms screen
+  (structurally cannot render a severity badge — `CardKind.severityOrNull()` is `null` for
+  every card here), search, bookmarks, and about.
+- **`:app`**: `KotlinGuardApplication` (the composition root — builds `DataContainer`,
+  launches `ContentSeeder.seedIfNeeded()` on a background dispatcher since Room forbids
+  main-thread DB access, unlike SwiftData's `@MainActor`-bound context) and
+  `MainActivity` (shows a loading spinner until seeding completes, then hosts
+  `RootScreen` via `ComponentActivity.setContent`).
+- Gradle wiring: root `build.gradle.kts`/`settings.gradle.kts`, per-module
+  `build.gradle.kts` (AGP 8.6.0, Kotlin 2.0.20, KSP 2.0.20-1.0.25, Room 2.6.1,
+  kotlinx-serialization 1.7.3, kaml 0.61.0, Compose BOM 2024.10.00, Navigation Compose
+  2.8.3), `AndroidManifest.xml`, launcher adaptive icon, and `values`/`values-pl`
+  `strings.xml`.
 
-## Architecture & key decisions (PLAN.md §2–§5)
+**Content scope, same representative-slice pattern as every prior sibling in this
+series:** 20 threats (OWASP Web Top 10 + LLM Top 10, in full), a representative sample of
+curated cards per deck (not every card in any deck), and 5 mitigations (not most threats
+have one) — each with a real attack-demo + defense code sample in Python/Java/Go/Scala/
+Lua. Every other framework family (Agentic AI, API, Client-Side, CI/CD, OAT, MASVS) exists
+as a catalogue row with no seeded threats yet.
 
-- **Kotlin 2.1**, min SDK **API 26 (Android 8.0)**, target **API 35**.
-- UI: **Jetpack Compose** (Material 3). State: `ViewModel` + `StateFlow` — no MVI
-  framework, no third-party state library. Data flows `Compose UI → ViewModel
-  (StateFlow) → Repository → Room DAO`.
-- Persistence: **Room** over embedded SQLite. `@Query` SQL strings are parsed and
-  verified against the entity schema at **compile time** via KSP (D-04) — this is the
-  strongest SQL-safety guarantee claimed anywhere in this Room layer; never bypass it
-  with `SupportSQLiteDatabase.rawQuery` + string concatenation.
-- Core entities (PLAN.md §5): `FrameworkEntity`, `ThreatEntity`, `CornucopiaCardEntity`
-  (uses a `sealed interface CardKind` — D-03 — for the exhaustive
-  technical-threat-vs-design-harm distinction), `MitigationEntity`, `CodeSampleEntity`,
-  `CrossReferenceEntity`, `ContentHashEntity` (SHA-256 integrity check on seeded assets),
-  `BookmarkEntity` (the only user-generated, sync-eligible row).
-- Every `AndroidManifest.xml` component is `android:exported="false"` except the
-  launcher `MainActivity` (D-02) — Android's IPC surface is called out in PLAN.md as a
-  risk category with no iOS equivalent; don't add an exported component without a
-  documented reason.
-- i18n: in-app `LocaleController` (D-05) using `AppCompatDelegate.setApplicationLocales`
-  for instant PL/EN switching, not system-locale-following.
+**Not built at all:**
+- **No `.apk` has ever been assembled.** No Android SDK/Gradle/JDK toolchain exists in the
+  environment this was written in — every file here is real, structurally-checked-by-hand
+  Kotlin (brace-balanced, cross-referenced for dangling type/import names, DAO `@Query`
+  columns checked by hand against entity fields since KSP can't run here to do it), but
+  none of it has been run through `./gradlew build` or Android Studio. Treat it the same
+  as app09's Docker Compose files and app11's Swift package: unverified-but-real source.
+- Google Sign-In + Cloud Firestore bookmark sync (D-07), a `WorkManager` periodic
+  re-verification job (the `BGAppRefreshTask` analogue), export
+  (`Intent.ACTION_SEND`/`ShareSheet`), the MITRE ATLAS kill-chain timeline Composable,
+  matrix/heatmap screens (the `RoomMatrixRepository` backing them exists in `:data`, but no
+  `LlmMatrixScreen`/`StrideHeatmapScreen`/etc. consume it yet), `detekt` config, and the
+  entire test suite (`data/src/test`, `app/src/androidTest` are both still empty
+  directories).
 
-## Tooling: no scripts/nginx/docker — this needs Android Studio instead
+## Architecture decisions to know before writing more code (see `PLAN.md` §2–§5)
 
-There is no server, so there's nothing to `docker compose up`. To do anything with this
-app you need: **Android Studio** (or a standalone Gradle + Android SDK/NDK install), a
-configured **Android emulator** (or physical device) targeting API 26+, and KSP wired
-into Gradle for Room's annotation processing. CI (per PLAN.md §2) runs on GitHub
-Actions using Ubuntu or macOS runners with the Android SDK/Gradle toolchain — no
-platform-specific host requirement the way `app11_swift_ios`'s macOS-only CI has.
+- **Min SDK 26 (Android 8.0)**, target SDK 35 — matches app11's iOS 17.0+ modernity bar.
+- **Persistence**: Room over embedded SQLite, `@Query` SQL strings verified against the
+  entity schema at **compile time** by the KSP annotation processor (D-04) — a
+  column-name typo is a build error, not a runtime one, the strongest guarantee this
+  layer claims. Optional filters use a `:param IS NULL OR column = :param` bound-parameter
+  pattern (see `ThreatDao.list` in `db/Daos.kt`) — the SQL-string analogue of app11's
+  single-`#Predicate` "`filter == nil || ...`" expression. `stride`/`tags` columns store a
+  kotlinx.serialization JSON array as TEXT (Room has no native array-column type), so
+  matching one element is a documented `LIKE '%"X"%'` substring check — less type-safe
+  than SwiftData's native `Array.contains` in app11's equivalent query.
+- **Three Gradle modules** (`:data`/`:ui`/`:app`) give Kotlin's `internal` visibility real
+  cross-module teeth (D-02) — a single-module app has no such boundary on its own.
+  `IntegrityChecker` is called only from `ContentSeeder`; nothing in `:ui` should ever
+  import it directly.
+- **kotlinx.serialization + kaml are strict-by-default (D-06)**: an unrecognized JSON/YAML
+  key throws `SerializationException` — the opposite default from Swift's `Codable`, which
+  silently ignores unknown keys unless a custom decoder is hand-written. This app gets the
+  D-06 guarantee "for free" from the library default; never set `ignoreUnknownKeys = true`
+  or pass a lenient `YamlConfiguration`.
+- **`sealed interface` + exhaustive `when`** (D-03, `CardKind`) is a hard, unconfigurable
+  compiler error for missed branches — the strongest guarantee in this series alongside
+  Rust/Haskell/Swift. It is structurally impossible to construct a `DesignHarm` card
+  carrying a `Severity` — there is no such constructor.
+- **No background job wired up yet at all** (see "Not built" above) — `WorkManager`/export
+  are still just `PLAN.md` §6 Phase 6 plans.
+- Room's built-in enum-to-`TEXT` column support (since Room 2.4) is used directly for
+  simple enums (`Severity`, `CodeLanguage`, `MitigationType`, etc.) — only `List<T>` and
+  the `CardKind` sealed interface need a hand-written `Converters` class
+  (`db/Converters.kt`), since Room has no native support for either shape.
+
+## What replaces the tooling other siblings have
+
+No `scripts/`, `nginx`, or `docker-compose.yml` — local development needs **Android
+Studio** (or a standalone Gradle + Android SDK install) instead: build/run via
+`./gradlew assembleDebug` / `./gradlew installDebug` targeting an emulator or device
+(API 26+), test via JUnit 5 + Kotest (`:data`, unit-level) and Espresso (`:app`,
+instrumented — replaces Playwright), lint via `detekt`. None of this has actually been
+run here either — see "Not built" above.
+
+## Where to look for more depth
+
+`PLAN.md` is the primary source (§0.1 source-material provenance, architecture §2–§9, risk
+register §13, phased build plan §6). `requirements.md` has the functional requirements;
+`user_stories+tests.md` has full acceptance criteria, TDD test plans, and real
+Polish-translated Cornucopia card examples per user story; `SDLC_analysis.md` covers the
+SSDLC/threat-modeling angle this app's own content doubles as (OWASP MASVS, Mobile
+Cornucopia deck).

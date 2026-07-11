@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KotlinGuard 2026</string>
+    <string name="frameworks_title">Security Frameworks</string>
+    <string name="threats_title">Threats</string>
+    <string name="search_title">Search</string>
+    <string name="bookmarks_title">Bookmarks</string>
+    <string name="about_title">About</string>
+    <string name="digital_harms_title">Digital-by-Default Harms</string>
+    <string name="no_results_for_filters">No results for the given filters.</string>
+    <string name="no_mitigations_yet">No mitigations defined yet for this threat.</string>
+    <string name="no_code_samples_yet">No code samples yet for this mitigation.</string>
+    <string name="attack_demo_label">ATTACK DEMO — vulnerable code, do not use in production</string>
+    <string name="attack_demo_reveal">Show code (VULNERABLE)</string>
+    <string name="attack_demo_confirm_message">This code deliberately demonstrates a vulnerability. Confirm to view it.</string>
+    <string name="digital_harms_disclaimer">This deck is not a list of technical vulnerabilities with a severity level — it models design harms (digital exclusion, opaque design) in public services, mapped to OWASP A04:2021 Insecure Design.</string>
+</resources>

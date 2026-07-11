@@ -1,7 +1,7 @@
 # SwiftGuard 2026 — SSDLC / SDLC Analysis
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Document type:** Secure Software Development Lifecycle (SSDLC) analysis, mapped against the classic SDLC
 **Scope:** Full lifecycle analysis of the application defined in `PLAN.md`, `requirements.md`, and `user_stories+tests.md`
 **Methodology:** Agile — Scrum for planning/cadence, Kanban overlay for the engineering + security workflow

@@ -1,0 +1,16 @@
+{
+  "VE2": { "severity": "high",     "owasp_refs": ["A05:2021", "A09:2021"], "mitre_refs": [] },
+  "VE3": { "severity": "critical", "owasp_refs": ["A03:2021"],             "mitre_refs": [] },
+  "VE4": { "severity": "high",     "owasp_refs": ["A01:2021"],             "mitre_refs": [] },
+  "VEK": { "severity": "critical", "owasp_refs": ["A03:2021"],             "mitre_refs": [] },
+  "AT7": { "severity": "high",     "owasp_refs": ["A07:2021"],             "mitre_refs": [] },
+  "ATJ": { "severity": "high",     "owasp_refs": ["A07:2021"],             "mitre_refs": [] },
+  "SM3": { "severity": "high",     "owasp_refs": ["A07:2021"],             "mitre_refs": [] },
+  "SMX": { "severity": "high",     "owasp_refs": ["A01:2021"],             "mitre_refs": [] },
+  "AZ5": { "severity": "critical", "owasp_refs": ["A01:2021"],             "mitre_refs": [] },
+  "AZ8": { "severity": "high",     "owasp_refs": ["A04:2021"],             "mitre_refs": [] },
+  "CR6": { "severity": "high",     "owasp_refs": ["A02:2021"],             "mitre_refs": [] },
+  "CR8": { "severity": "high",     "owasp_refs": ["A02:2021"],             "mitre_refs": [] },
+  "C3":  { "severity": "medium",   "owasp_refs": ["A05:2021"],             "mitre_refs": [] },
+  "CX":  { "severity": "high",     "owasp_refs": ["A06:2021"],             "mitre_refs": [] }
+}

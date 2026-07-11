@@ -1,9 +1,11 @@
 # KotlinGuard 2026 — User Stories & TDD Test Plan
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Approach:** Test-Driven Development — RED (failing test first) → GREEN (minimal implementation) → REFACTOR
 **Test stack:** JUnit 5 (unit) · Kotest (property-based testing) · Jetpack Compose UI Testing (`createAndroidComposeRule`, instrumented)
+
+**Data provenance (see `PLAN.md` §0.1):** the raw `docs/OWASP_stories/*.yaml` files carry only `id`/`value`/`url`/`desc`/`misc` — no `severity`, `CardKind`, or OWASP/MITRE/CWE reference field exists in any of them. Mappings shown in the tables below are curated content, not values extracted from the YAML.
 
 ---
 

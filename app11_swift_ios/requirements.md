@@ -1,9 +1,9 @@
 # SwiftGuard 2026 — Requirements Specification
 
-**Version:** 1.0
-**Date:** 2026-07-07
+**Version:** 2.0
+**Date:** 2026-07-11
 **Project:** `app11_swift_ios`
-**Sources:** `docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md`, `docs/OWASP_stories/*.yaml` (all 6 card decks), `PLAN.md`
+**Sources:** `docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md`, `docs/OWASP_stories/*.yaml` (all 6 card decks), `PLAN.md` (see `PLAN.md` §0.1 for exactly what each source does and does not contain)
 
 ---
 
@@ -12,6 +12,8 @@
 SwiftGuard 2026 is a bilingual (PL/EN) security-education **native iOS application** built entirely in **Swift 6** (SwiftUI + SwiftData), with no server backend, no separate database server, and no web frontend. It presents OWASP Web/LLM/Agentic AI/API/Client-Side/CI-CD/Automated-Threats/MASVS content, MITRE ATLAS, CompTIA Security+/SecAI+, and all six OWASP Cornucopia-family card decks under `docs/OWASP_stories/`, each threat/card backed by countermeasure code samples in five languages (Python, Java, Go, Scala, Lua). None of those five sample languages is the application's own implementation language.
 
 **This document, consistent with this series' practice since `app07_rust_react`, states each requirement's enforcement mechanism precisely — compiler, OS-level sandbox, or code review — and is explicit that this app's own threat model is drawn primarily from OWASP MASVS and the Mobile App Cornucopia deck rather than the Web Top 10 every prior sibling centered on.**
+
+**Provenance, per `PLAN.md` §0.1:** the source mapping document fully covers OWASP LLM Top 10, OWASP Web Top 10, MITRE ATLAS, and CompTIA Security+/SecAI+; it does **not** cover Agentic AI Top 10, API Security Top 10, Client-Side Top 10, CI/CD Security Top 10, OAT, or MASVS, and the raw Cornucopia YAML carries no `severity`/`CardKind`/cross-reference fields at all. Every requirement below that depends on data not present in a source file says so explicitly rather than implying it was extracted.
 
 ---
 
