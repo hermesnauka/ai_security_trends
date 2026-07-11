@@ -228,7 +228,7 @@ NIST AI RMF · NIS2/UKSC (PL/EU).
 | Website App v3.0 | `webapp-cards-3.0-en.yaml` | all 7 suits (VE, AT, SM, AZ, CR, C, WC), all cards |
 | Mobile App v1.1 | `mobileapp-cards-1.1-en.yaml` | all 7 suits (PC, AA, NS, RS, CRM, CM, WC), all cards |
 | Companion v1.0 | `__LLM_AI___companion-cards-1.0-en.yaml` | all 7 suits (LLM, CLD, FRE, DVO, BOT, AAI, Common), all cards |
-| STRIDE EoP v5.0 | `STRIDE__eop-cards-5.0-en.yaml` | all 6 STRIDE suits (SP, TA, RE, ID, DO, EP), all cards |
+| STRIDE EoP v5.0 | `STRIDE__eop-cards-5.0-en.yaml` | all 6 STRIDE suits (SP, TA, RE, ID, DS, EP), all cards |
 | Elevation of MLSec v1.0 | `RISKS__elevation-of-mlsec-cards-1.0-en.yaml` | all 4 suits (EMR, EIR, EOR, EDR), all cards |
 | Digital-by-Default Harms v1.0 | `dbd-cards-1.0-en.yaml` | all suits (SCO, ARC, AGE, TRU, POR, COR, WC), all cards |
 

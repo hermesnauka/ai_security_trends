@@ -54,7 +54,7 @@ since app09 states).
 | SR-11 | No C# `UserData`-registered live object SHALL ever be exposed to a Lua script — every C#↔Lua boundary call SHALL pass only plain data (tables, strings, numbers, booleans) (D-07). |
 | SR-12 | Dependency vulnerabilities SHALL be checked in CI: `luarocks` package pins reviewed against known-CVE Lua packages for the backend; Unity package manifest reviewed for the frontend. |
 | SR-13 | The app SHALL NOT implement any feature that loads a Lua script from a source other than this repository's own `backend/app/` or `frontend/Assets/StreamingAssets/lua/` directories in Phase 1 or Phase 2 — no user-supplied "custom card deck" scripting endpoint, no server-side `eval`-style route. Any future work in this direction requires a dedicated threat-model review first (see `PLAN.md` §11). |
-| SR-14 | Every list/filter endpoint SHALL respond within 200ms (p95) against the seeded dataset — validated by a `busted` request-spec assertion, not just an aspiration. |
+| SR-14 | Every list/filter endpoint SHALL respond within 200ms (p95) against the seeded dataset. **Not yet validated by a test** — no timing assertion exists in `backend/spec/routes/` today; this is a stated target, not a currently-enforced gate, matching the honest aspirational-vs-actual split every sibling's own requirements.md uses elsewhere in this repo. |
 
 ## 4. Abuse-Case Table
 

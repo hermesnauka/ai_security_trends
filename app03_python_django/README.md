@@ -32,16 +32,26 @@ docker compose up --build
 
 ### Local dev (without Docker)
 
+The fastest path is the one-shot script (does everything below for you — starts/reuses the
+shared Postgres instance, creates the `threatcompass` role/DB, creates the venv with the
+correct dependency list, migrates, seeds, and starts the dev server on `:8000`):
+
+```bash
+scripts/local-dev-up.sh
+```
+
+Manual equivalent, if you want to run each step yourself:
+
 ```bash
 cd backend_django
 python -m venv .venv
-.venv/Scripts/pip install -e .  # or the explicit package list in Dockerfile - see note below
+.venv/Scripts/pip install -e .  # fails here — see note below; install the explicit list instead
 .venv/Scripts/python manage.py migrate
 .venv/Scripts/python manage.py seed_frameworks
 .venv/Scripts/python manage.py runserver
 ```
 
-**Note:** `pip install -e .` fails here with a setuptools flat-layout package-discovery error (Django's one-app-per-directory layout looks like "multiple top-level packages" to setuptools, since Django apps aren't meant to be pip-installed). Install the dependency list directly instead - see `Dockerfile` or `scripts/local-dev-up.sh` for the exact command.
+**Note:** `pip install -e .` fails here with a setuptools flat-layout package-discovery error (Django's one-app-per-directory layout looks like "multiple top-level packages" to setuptools, since Django apps aren't meant to be pip-installed). Install the dependency list directly instead — see `Dockerfile` or `scripts/local-dev-up.sh` for the exact command list.
 
 **This machine specifically** has no Docker installed. `scripts/local-dev-up.sh` / `scripts/local-dev-down.sh` start/stop Postgres (shared instance across sibling apps on this machine) and the Django dev server from a local venv - Celery worker/beat are skipped since they don't run real tasks yet. Machine-specific — use `docker compose` elsewhere.
 

@@ -48,12 +48,12 @@ All six decks are in scope from day one of this plan (§11, §15) — the gap th
 | Language | Rust | stable, 2024 edition |
 | Async runtime | Tokio | 1.x |
 | Web framework | `axum` (built on Tokio + Tower) | 0.8.x |
-| Database access | `sqlx` — `query!`/`query_as!` macros checked against a live schema at **compile time** | 0.8.x |
+| Database access | `sqlx` — originally planned as `query!`/`query_as!` macros checked at **compile time**; **as actually implemented, handlers use the runtime-checked `query_as`/`QueryBuilder` instead** (the `!` macros need a live, pre-migrated Postgres present at `cargo build` time, which breaks a portable clone-and-build workflow) — see `CLAUDE.md` | 0.8.x → 0.9.x actual |
 | Database | PostgreSQL 16 | — |
 | Migrations | `sqlx migrate` | — |
 | Cache / rate-limit store | in-process `governor` (GCRA token bucket, `Arc`-shared, data-race-free by the type system, not by discipline) for single-instance limits; Redis 7 (`redis-rs`) for cross-instance cache | — |
 | Background jobs | `apalis` — PostgreSQL-backed job queue for Rust/Tokio (export, YAML re-ingestion, periodic integrity re-check) | — |
-| Auth | `jsonwebtoken` (RS256) | — |
+| Auth | `jsonwebtoken` (RS256 planned here originally; **as actually implemented, this backend uses HS256 with a shared `JWT_SECRET`, matching app01's contract exactly** — see `CLAUDE.md`) | — |
 | Password hashing | `argon2` crate (Argon2id — memory-hard, the current OWASP-recommended default, a deliberate step up from the `bcrypt` used in `app05_go_react`/`app06_HASKELL_react`) | — |
 | Validation | `validator` crate (derive-based) + hand-written smart constructors | — |
 | HTML sanitization | `ammonia` — pure-Rust, allow-list HTML sanitizer built on `html5ever` | — |

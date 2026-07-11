@@ -9,7 +9,9 @@ repo.
 ## Current state: Phase-1 / milestone M1 only
 
 Read-only frameworks + threats, one hardcoded (config-driven) admin login, 4
-seeded frameworks, ~33 threats. Later-phase tables (`mitigation`,
+seeded frameworks, 34 threats (10 OWASP Web + 10 OWASP LLM + 6 MITRE ATLAS + 8
+CompTIA SecAI+, counted directly from `V2__seed_frameworks_and_threats.sql`).
+Later-phase tables (`mitigation`,
 `code_sample`, `cross_reference`, `threat_translation`, `cornucopia_card`,
 `content_hash`) exist in the `V1` Flyway migration
 (`backend/src/main/resources/db/migration/V1__init_schema.sql`) but have no
@@ -112,6 +114,15 @@ don't assume the guard exists if you touch these DTOs further.
 - No `./mvnw` wrapper is checked in (`README.md` calls this out); run
   `mvn -N wrapper:wrapper` once before scripting backend builds that assume
   a wrapper exists.
+- **`scripts/local-dev-up.sh` has its own database-name bug**: it exports
+  `DB_NAME="${POSTGRES_DB}"` for the backend process (so `application.yml`'s
+  `${DB_NAME}` resolves to whatever `POSTGRES_DB` is set to, e.g.
+  `securevision`), but the role/DB-provisioning step above it hardcodes
+  `CREATE DATABASE threatview OWNER securevision;` — a literal, uncorrelated
+  database name. If `POSTGRES_DB` is set to anything other than literally
+  `threatview`, the script creates a database the backend never connects to,
+  and the backend fails to start against a database that doesn't exist yet.
+  Fix the hardcoded name to `"${POSTGRES_DB}"` before relying on this script.
 - Backend test suite is exactly one test (`SecureVisionApplicationTests`,
   a Testcontainers Postgres context-load check) — no controller/service unit
   tests, no endpoint integration tests exist yet.
@@ -124,9 +135,13 @@ don't assume the guard exists if you touch these DTOs further.
 docker compose up --build   # frontend :8081, backend :8080, swagger-ui.html
 ```
 This machine has no Docker installed (see `../CLAUDE.md`), so day-to-day dev
-uses `scripts/local-dev-up.sh` / `local-dev-down.sh` instead — that script
-only ensures the `securevision` role/DB exist on the shared local Postgres
-instance, it doesn't run the app itself. Copy `.env.example` to `.env` and
+uses `scripts/local-dev-up.sh` / `local-dev-down.sh` instead. Unlike most
+siblings' same-named scripts (which only ensure the role/DB exists), app01's
+`local-dev-up.sh` is a full one-shot dev-stack runner: it starts the shared
+local Postgres if not already running, ensures the `securevision` role/DB
+exist, then backgrounds `mvn spring-boot:run` (backend, waits on `:8080`) and
+`npm run dev` (frontend, waits on `:5173`), logging each to `.local-dev/*.log`.
+Copy `.env.example` to `.env` and
 set real values first (`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`,
 `JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`); dev-only admin
 credentials (`admin` / `changeme-dev-only`, see `application.yml`'s comment

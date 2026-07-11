@@ -58,6 +58,14 @@ The old version of this file described these as open decisions to make
   even for dynamic filter/sort clauses; the `sort` column name is checked
   against a fixed whitelist (`SORTABLE_COLUMNS`) before being concatenated as
   a raw identifier — see `backend/src/handlers/threats.rs`.
+- **All handlers use runtime-checked `sqlx::query_as`, not the compile-time
+  `query_as!`/`query!` macros `PLAN.md`'s stack table originally committed
+  to.** The `!` macros need a live, already-migrated Postgres present at
+  `cargo build` time (via `sqlx`'s offline-mode cache or a real DB
+  connection) — using them here would make `cargo build`/`cargo check` fail
+  for anyone who clones this repo without a running, pre-migrated database
+  first. `src/handlers/frameworks.rs` has a code comment pointing here for
+  this exact reasoning — this paragraph is that explanation.
 
 If you're extending this backend, cross-check `frontend/src/types/index.ts`
 and `frontend/src/api/client.ts` before changing any response shape — the

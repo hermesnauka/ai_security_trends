@@ -64,19 +64,26 @@ feature is "done":
   `suit-archive.php` for now).
 
 Two schema additions exist beyond `PLAN.md`'s original §5.1 text, both now documented there
-too: a `slug` column on `sp_mitigations`, and a `sp_export_jobs` table + FULLTEXT indexes
-(all three added via `ALTER TABLE` rather than embedded in `dbDelta()`'s `CREATE TABLE`
-strings, since dbDelta's parser isn't reliable for constraints/FULLTEXT — same reasoning as
-the `CHECK`/`FOREIGN KEY` constraints below).
+too: a `slug` column on `sp_mitigations`, and a `sp_export_jobs` table. Unlike the
+`FOREIGN KEY`/`FULLTEXT` additions below, both of these are embedded directly in their own
+`dbDelta()`-managed `CREATE TABLE` string in `Schema::table_definitions()` — not added via a
+separate `ALTER TABLE`. (One genuine wrinkle worth knowing: the design-harm `CHECK` constraint
+on `sp_cards` is itself embedded directly in that table's `CREATE TABLE` string too, and then
+redundantly re-declared via `Schema::add_constraints()`'s `ALTER TABLE` step, guarded by an
+"add if missing" check against `information_schema` — harmless in practice, but the two
+declarations exist in both places, not only the `ALTER TABLE` one.)
 
 ## Key decisions before writing code (full detail: `PLAN.md` §2–5)
 
 - **Storage:** custom `$wpdb` tables (`sp_frameworks`, `sp_threats`, `sp_cards`,
   `sp_mitigations`, `sp_code_samples`, `sp_cross_references`, `sp_content_hashes`,
   `sp_threat_translations`, `sp_export_jobs`) via `dbDelta()` — not CPTs + postmeta (schema:
-  `PLAN.md` §5.1). `FOREIGN KEY`/`CHECK`/`FULLTEXT` clauses are added via a separate
+  `PLAN.md` §5.1). `FOREIGN KEY` constraints and `FULLTEXT` indexes are added via a separate
   `ALTER TABLE` step in `Schema`, not embedded in the `dbDelta()` strings — dbDelta's parser
-  doesn't reliably handle those.
+  doesn't reliably handle those. The one `CHECK` constraint (`sp_cards`' design-harm rule) is
+  the exception: it's embedded directly in that table's `dbDelta()`-managed `CREATE TABLE`
+  string *and* redundantly re-declared via the same `ALTER TABLE` step (harmless, guarded by
+  an existence check, but don't assume `CHECK` follows the FK/FULLTEXT pattern cleanly).
 - **Auth:** WordPress users/roles/capabilities (`current_user_can()`), a new
   `securepress_editor` role + `manage_securepress`/`securepress_trainer` capabilities. No JWT
   layer. CSRF via WordPress nonces (`wp_verify_nonce`, `X-WP-Nonce`).

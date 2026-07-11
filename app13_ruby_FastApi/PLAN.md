@@ -343,8 +343,10 @@ app13_ruby_FastApi/
 │   │   ├── api/                        ← Grape::API classes, one per resource
 │   │   ├── entities/                   ← Grape::Entity response shapers
 │   │   ├── models/                     ← Sequel::Model classes
-│   │   ├── services/                   ← CardFileLoader, ReferenceValidator, ContentSeeder, IntegrityChecker
-│   │   └── middleware/                 ← JWT auth middleware, rack-attack config
+│   │   └── services/                   ← CardFileLoader, ReferenceValidator, ContentSeeder, IntegrityChecker, JwtService
+│   ├── config/
+│   │   ├── environment.rb              ← Rack::Attack rate-limit config (SR-05), DB/Sequel setup
+│   │   └── puma.rb
 │   ├── db/
 │   │   ├── migrations/
 │   │   └── seeds/                      ← frameworks.json, threats_seed.json, cornucopia/*.yaml, code_samples/{python,java,go,scala,lua}/

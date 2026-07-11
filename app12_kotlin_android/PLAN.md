@@ -277,7 +277,10 @@ data class CornucopiaCardEntity(
     ]
 )
 data class MitigationEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey val slug: String,   // as-built: a String slug primary key (matching every
+                                     // sibling's own `mitigations.slug` convention), not an
+                                     // autoGenerate Long — this section originally specified
+                                     // `id: Long = 0`; corrected 2026-07-11 to match `data/src/main/kotlin/.../model/Entities.kt`
     val threatCode: String?,
     val cardId: String?,
     val title: String,
@@ -293,10 +296,16 @@ data class MitigationEntity(
 
 ### 5.6 CodeSample
 ```kotlin
-@Entity(tableName = "code_samples")
+@Entity(
+    tableName = "code_samples",
+    foreignKeys = [
+        ForeignKey(entity = MitigationEntity::class, parentColumns = ["slug"], childColumns = ["mitigationSlug"])
+    ]
+)
 data class CodeSampleEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val mitigationId: Long,
+    val mitigationSlug: String,   // as-built: references MitigationEntity.slug, not a Long
+                                   // mitigationId — corrected 2026-07-11 to match the real entity
     val language: CodeLanguage,
     val sampleType: SampleType,
     val title: String,
@@ -314,6 +323,9 @@ data class CrossReferenceEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val sourceThreatCode: String,
     val targetThreatCode: String,
+    val targetThreatTitle: String,   // as-built field, added 2026-07-11 to match
+                                       // `data/src/main/kotlin/.../model/Entities.kt` — denormalized
+                                       // so a cross-reference list doesn't need a join to render a title
     val relationshipType: RelationshipType,
     val description: String
 )
@@ -495,20 +507,38 @@ app12_kotlin_android/
 ├── build.gradle.kts
 ├── data/                                  ← Gradle module
 │   ├── build.gradle.kts                   ← KSP, Room, kotlinx.serialization, kaml
-│   └── src/main/kotlin/.../data/
+│   └── src/main/kotlin/.../data/          ← as-built layout (corrected 2026-07-11; the module
+│       │                                    contents below are one file per real class, not the
+│       │                                    single CardFileDecoders.kt this section originally
+│       │                                    sketched, and D-07's SyncCoordinator.kt does not exist
+│       │                                    yet — Firestore sync is still unimplemented, see
+│       │                                    ../CLAUDE.md "Still not built")
 │       ├── model/
-│       │   ├── Enums.kt                   ← Section 5 enums
+│       │   ├── Enums.kt                   ← Section 5 enums + AppLocale
 │       │   └── CardKind.kt                ← D-03
+│       ├── assets/
+│       │   └── AssetSource.kt             ← abstraction CardLoader/ContentSeeder read bundled
+│       │                                    assets through (real `FileAssetSource` test double
+│       │                                    reads the actual app/src/main/assets/ tree, §"Current
+│       │                                    state" in CLAUDE.md)
 │       ├── seeding/
-│       │   └── ContentSeeder.kt
-│       ├── cards/
-│       │   └── CardFileDecoders.kt        ← D-06, one decoder per YAML shape
+│       │   ├── ContentSeeder.kt
+│       │   └── SeedDTOs.kt
+│       ├── cards/                         ← D-06, one class per concern rather than one decoder file
+│       │   ├── CardDecodeError.kt
+│       │   ├── CardFile.kt
+│       │   ├── CardLoader.kt
+│       │   ├── CurationFile.kt
+│       │   ├── DeckManifestEntry.kt
+│       │   └── ReferenceValidator.kt
 │       ├── integrity/
+│       │   ├── Hashing.kt
 │       │   └── IntegrityChecker.kt        ← module-internal, isolated per D-02-style boundary
-│       ├── sync/
-│       │   └── SyncCoordinator.kt         ← the only file importing Firestore/Google Sign-In (D-07)
-│       ├── db/                             ← Room @Dao interfaces, @Database class
-│       └── repository/                      ← §7 interface implementations
+│       ├── di/
+│       │   └── DataContainer.kt           ← manual composition root (no Hilt/Koin)
+│       ├── db/                             ← Converters.kt, Daos.kt, KotlinGuardDatabase.kt
+│       └── repository/                      ← §7 interface implementations (Room*Repository.kt,
+│                                               one per repository contract)
 ├── ui/                                      ← Gradle module, depends on :data's public API only
 │   └── src/main/kotlin/.../ui/
 │       ├── screens/                          ← §8
@@ -520,19 +550,25 @@ app12_kotlin_android/
 │   ├── src/main/
 │   │   ├── AndroidManifest.xml                ← D-02: every component exported="false" except launcher
 │   │   ├── kotlin/.../MainActivity.kt
-│   │   └── assets/
-│   │       ├── owasp_web_top10.json
-│   │       ├── owasp_llm_top10.json
-│   │       ├── owasp_agentic_top10.json
-│   │       ├── mitre_atlas.json
-│   │       ├── comptia_secai.json
+│   │   └── assets/                            ← as-built names (corrected 2026-07-11 — this
+│   │       │                                    section originally planned owasp_web_top10.json/
+│   │       │                                    owasp_llm_top10.json/owasp_agentic_top10.json/
+│   │       │                                    mitre_atlas.json/comptia_secai.json, none of which
+│   │       │                                    exist; the real seed assets instead follow this
+│   │       │                                    repo's shared cross-sibling naming convention)
+│   │       ├── frameworks.json
+│   │       ├── threats_seed.json
+│   │       ├── threat_translations_seed.json
+│   │       ├── cross_references_seed.json
+│   │       ├── mitigations_seed.json
+│   │       ├── code_samples_manifest.json
 │   │       ├── cornucopia/
-│   │       │   ├── webapp-cards-3.0-en.yaml
-│   │       │   ├── companion-llm-cards-1.0-en.yaml
-│   │       │   ├── mobileapp-cards-1.1-en.yaml
-│   │       │   ├── stride-eop-cards-5.0-en.yaml
-│   │       │   ├── mlsec-cards-1.0-en.yaml
-│   │       │   ├── dbd-cards-1.0-en.yaml      ← Digital-by-Default Harms (US-19)
+│   │       │   ├── webapp-cards-3.0-en.yaml (+ webapp.curation.json)
+│   │       │   ├── companion-llm-cards-1.0-en.yaml (+ companion.curation.json)
+│   │       │   ├── mobileapp-cards-1.1-en.yaml (+ mobileapp.curation.json)
+│   │       │   ├── stride-eop-cards-5.0-en.yaml (+ stride-eop.curation.json)
+│   │       │   ├── mlsec-cards-1.0-en.yaml (+ mlsec.curation.json)
+│   │       │   ├── dbd-cards-1.0-en.yaml (+ dbd.curation.json)  ← Digital-by-Default Harms (US-19)
 │   │       │   └── translations/pl.cards.json
 │   │       ├── hashes.json
 │   │       ├── mitre-atlas-allowlist.json

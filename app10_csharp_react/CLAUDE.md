@@ -6,9 +6,9 @@ local-dev-tooling notes.
 
 ## Current state: backend and frontend both exist and are wired together
 
-Both halves are built — this is further along than the root `CLAUDE.md`'s sibling
-status table says (it still lists app10 as "frontend only, backend not started";
-that line is stale, verify against the filesystem, not that table).
+Both halves are built — the root `CLAUDE.md`'s sibling status table already reflects
+this ("backend+frontend built; HS256, matches app01"). Still verify against this
+directory's filesystem directly rather than trusting either table in isolation.
 
 - **`backend/`** — ASP.NET Core 9 Minimal API, single project
   `backend/src/SharpGuard.Api/SharpGuard.Api.csproj` (`SharpGuard.sln` at

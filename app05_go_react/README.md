@@ -50,6 +50,7 @@ go run ./cmd/api
 
 # frontend - proxies /api/v1 to localhost:8080 via vite.config.ts
 cd frontend && npm install && npm run dev
+# → http://localhost:5173 (Vite's default dev-server port)
 ```
 
 **This machine specifically** has no Docker installed. `scripts/local-dev-up.sh` /

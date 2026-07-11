@@ -30,7 +30,7 @@ Everything that might otherwise be split into a separate service — content-int
 | `webapp-cards-3.0-en.yaml` | OWASP Cornucopia — Website App v3.0 | VE, AT, SM, AZ, CR, C, WC |
 | `mobileapp-cards-1.1-en.yaml` | OWASP Cornucopia — Mobile App v1.1 | PC, AA, NS, RS, CRM, CM, WC |
 | `__LLM_AI___companion-cards-1.0-en.yaml` | OWASP Cornucopia — Companion (AI/Cloud/DevOps) v1.0 | LLM, CLD, FRE, DVO, BOT, AAI, Common |
-| `STRIDE__eop-cards-5.0-en.yaml` | Microsoft "Elevation of Privilege" (STRIDE) v5.0 | SP, TA, RE, ID, DO, EP |
+| `STRIDE__eop-cards-5.0-en.yaml` | Microsoft "Elevation of Privilege" (STRIDE) v5.0 | SP, TA, RE, ID, DS, EP |
 | `RISKS__elevation-of-mlsec-cards-1.0-en.yaml` | "Elevation of MLSec" v1.0 | EMR, EIR, EOR, EDR |
 | `dbd-cards-1.0-en.yaml` | Digital-by-Default Harms Deck v1.0 | SCO, ARC, AGE, TRU, POR, COR, WC |
 
@@ -166,7 +166,7 @@ class CornucopiaCard(models.Model):
     suit_code = models.CharField(max_length=10)               # "VE","AT","SM","AZ","CR","C",
                                                                 # "PC","AA","NS","RS","CRM","CM",
                                                                 # "LLM","CLD","FRE","DVO","BOT","AAI",
-                                                                # "SP","TA","RE","ID","DO","EP",
+                                                                # "SP","TA","RE","ID","DS","EP",
                                                                 # "EMR","EIR","EOR","EDR",
                                                                 # "SCO","ARC","AGE","TRU","POR","COR","WC"
     suit_name = models.CharField(max_length=100)
@@ -258,7 +258,7 @@ Covers: US-02, US-03, US-04
 Covers: US-05–US-10
 - [ ] YAML loader (`manage.py load_cornucopia_cards`) reading all six `docs/OWASP_stories/*.yaml` files with `yaml.safe_load`
 - [ ] `integrity.services.HashVerificationService` — pure Python `hashlib.sha256`, compares against `data/hashes.json`, fail-secure if mismatch
-- [ ] `cards` app: suit browsers for VE/AT/SM/AZ/CR (webapp), PC/AA/NS/RS/CRM (mobile), LLM/AAI/FRE/DVO/BOT/CLD (companion), SP/TA/RE/ID/DO/EP (STRIDE), EMR/EIR/EOR/EDR (mlsec), SCO/ARC/AGE/TRU/POR (dbd)
+- [ ] `cards` app: suit browsers for VE/AT/SM/AZ/CR (webapp), PC/AA/NS/RS/CRM (mobile), LLM/AAI/FRE/DVO/BOT/CLD (companion), SP/TA/RE/ID/DS/EP (STRIDE), EMR/EIR/EOR/EDR (mlsec), SCO/ARC/AGE/TRU/POR (dbd)
 - [ ] Django admin: read-only card browser + `content_sha256` displayed (no inline edit — cards are content-controlled, see NFR-Security)
 - [ ] `AttackDemoWarning` HTMX modal before rendering `ATTACK_DEMO` code samples
 - [ ] Celery beat schedule: `integrity.tasks.periodic_hash_reverify` runs weekly
@@ -387,7 +387,7 @@ sample_type: DEFENSE       # SECURE pattern, with a one-line WHY comment
 | OWASP CI/CD Security Top 10 | CICD-SEC-01–10 | `DVO` suit (Companion) |
 | OWASP Automated Threats (OAT) | ≥ 13 of 21 | `BOT` suit (Companion) |
 | OWASP MASVS 2.0 | all 7 categories | `PC/AA/NS/RS/CRM/CM` suits (Mobile) |
-| STRIDE | S,T,R,I,D,E — all 6 | `SP/TA/RE/ID/DO/EP` suits (EoP v5.0) |
+| STRIDE | S,T,R,I,D,E — all 6 | `SP/TA/RE/ID/DS/EP` suits (EoP v5.0) |
 | Elevation of MLSec | Model/Input/Output/Dataset Risk | `EMR/EIR/EOR/EDR` suits |
 | Digital-by-Default Harms | Scope/Architecture/Agency/Trust/Porosity | `SCO/ARC/AGE/TRU/POR` suits — mapped to A04:2021 Insecure Design + GRC/AI-Act content |
 | MITRE ATLAS | ≥ 15 techniques across ≥ 5 tactics | seeded JSON, cross-referenced from LLM/AAI/mlsec cards |

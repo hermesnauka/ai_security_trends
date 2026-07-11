@@ -38,10 +38,19 @@ cd frontend && npm install && npm run dev
 ```
 
 **This machine specifically** has no Docker installed. `scripts/local-dev-up.sh` /
-`scripts/local-dev-down.sh` start/stop the same three pieces (Postgres, backend,
-frontend) as standalone portable installs under `C:\Users\krish\tools\` instead
-of containers. Machine-specific (hardcoded tool paths) — not portable to other
-setups; use `docker compose` there instead.
+`scripts/local-dev-down.sh` are a one-shot alternative that starts **all three**
+pieces together: the shared local Postgres (if not already running), then
+backend (`mvn spring-boot:run`, waits for `:8080`), then frontend
+(`npm run dev`, waits for `:5173`) — logs land in `.local-dev/{postgres,backend,frontend}.log`.
+Machine-specific (hardcoded tool paths under `C:\Users\krish\tools\`) — not
+portable to other setups; use `docker compose` there instead.
+
+**Known issue if you use `local-dev-up.sh`:** its Postgres-provisioning step
+hardcodes `CREATE DATABASE threatview ...`, not `$POSTGRES_DB` — if your
+`POSTGRES_DB` isn't literally `threatview`, the backend will fail to connect
+because the database it actually needs doesn't exist yet. Create it manually
+(`createdb -U securevision -h 127.0.0.1 $POSTGRES_DB`) as a workaround, or fix
+the script.
 
 ### Admin login (dev-only credentials)
 

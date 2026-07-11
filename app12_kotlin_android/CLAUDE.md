@@ -144,11 +144,15 @@ empty directories):
   (`Intent.ACTION_SEND`/`ShareSheet`), the MITRE ATLAS kill-chain timeline Composable,
   matrix/heatmap screens (the `RoomMatrixRepository` backing them exists in `:data`, but no
   `LlmMatrixScreen`/`StrideHeatmapScreen`/etc. consume it yet), and `detekt` config.
-- **Nothing has actually been executed.** No Android SDK/Gradle/JDK toolchain exists in
-  the environment this was written in — every file here, including the test suite itself,
-  is real, structurally-checked-by-hand Kotlin, but none of it has been run through
-  `./gradlew build`/`./gradlew test` or Android Studio. Treat it the same as app09's Docker
-  Compose files and app11's Swift package: unverified-but-real source.
+- **Nothing has actually been executed.** A system `gradle`/`java` binary is present on
+  this machine (checked 2026-07-11), but `gradle` resolves to a Gradle 4.4.1 install (from
+  2012) with no Android SDK anywhere on the machine and no `gradlew` wrapper committed to
+  this repo — three separate, each-individually-sufficient reasons this project (AGP 8.6.0,
+  Kotlin 2.0.20, KSP) cannot actually build here, unlike `app13_ruby_FastApi`'s Node/npm,
+  which turned out to be fully capable and were actually run. Every file here, including the
+  test suite itself, is real, structurally-checked-by-hand Kotlin, but none of it has been
+  run through `./gradlew build`/`./gradlew test` or Android Studio. Treat it the same as
+  app09's Docker Compose files and app11's Swift package: unverified-but-real source.
 
 ## Architecture decisions to know before writing more code (see `PLAN.md` §2–§5)
 

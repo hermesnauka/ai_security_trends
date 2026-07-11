@@ -14,9 +14,9 @@ local-dev setup.
 `POST /api/v1/auth/login`, `GET /api/v1/frameworks[/:code]`, `GET
 /api/v1/threats[/:id]`, and `GET /health`, all wired against a real Postgres
 connection via Drogon's own async ORM (`drogon::orm::DbClient`). The root
-repo's sibling status table may still say "frontend only, backend not
-started" for app08 — that line is stale; verify against this file and the
-filesystem, not the root table.
+repo's sibling status table has since been corrected to say "backend+frontend
+built" for app08 (verified 2026-07-11) — still double-check both against the
+filesystem before trusting them blindly.
 
 Not present: no test suite (GoogleTest/GoogleMock/RapidCheck from PLAN.md
 §5.7 isn't scaffolded — `find . -iname '*test*'` turns up nothing but
@@ -65,23 +65,29 @@ present). `frontend/src/types/index.ts` is written against the canonical
 contract's shape — don't change it without checking the backend DTOs still
 match. Structure: `src/{api,components,pages,types}`.
 
-## Local dev tooling — scripts/local-dev-up.sh is still stale
+## Local dev tooling — scripts/local-dev-up.sh was stale, now fixed (2026-07-11)
 
-`scripts/local-dev-up.sh` still `cd`s into `backend/` and runs `mvn
-spring-boot:run` — it was copied from `app01_react` and never adapted to the
-Drogon binary that now exists. `.local-dev/backend.log` is a leftover Spring
-Boot log from that copy, not evidence of the C++ backend having run. Fix the
-script (point it at the real Conan/CMake build + the `cppcitadel` binary,
-port from `HTTP_PORT`/`Config.h` — default 8080) before relying on it; don't
-trust its current output. `.env` / `.env.example` already define the real env
-vars the C++ app reads (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
-`DB_PASSWORD`, `HTTP_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_HOURS`,
-`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`) — use those names, not the Spring
-ones the stale script assumes.
+`scripts/local-dev-up.sh` used to `cd` into `backend/` and run `mvn
+spring-boot:run` — a leftover copy from `app01_react` that was never adapted
+to the Drogon binary. `.local-dev/backend.log` still contains a stale Spring
+Boot log from that old copy's last run; delete it or ignore its contents, it
+is not evidence of the C++ backend having run. The script has since been
+rewritten to run `conan install` + `cmake --preset conan-release` + `cmake
+--build --preset conan-release` and then execute the real `cppcitadel`
+binary, applying `db/migrations/V1__init_schema.sql`/`V2__seed.sql` via
+`psql` the first time the database is created (there is no migration-tracking
+table or tool — re-running the script does NOT re-apply migrations against an
+existing database). See `README.md` for the exact commands this script runs
+and the manual equivalent. `.env`/`.env.example` define the real env vars the
+C++ app reads (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`,
+`HTTP_PORT`, `JWT_SECRET`, `JWT_EXPIRATION_HOURS`, `ADMIN_USERNAME`,
+`ADMIN_PASSWORD_HASH`) — use those names, not the Spring ones the old script
+assumed.
 
 No Docker on this machine (see `../CLAUDE.md`); no `docker-compose.yml`
-exists in this app yet either, so there's nothing to fall back to besides the
-script above.
+exists in this app, so the fixed script above is the only automated path —
+see `README.md` for the manual fallback if you'd rather run each step
+yourself.
 
 ## Before extending the backend further
 

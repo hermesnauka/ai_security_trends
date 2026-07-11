@@ -322,8 +322,11 @@ CREATE TABLE {$wpdb->prefix}sp_export_jobs (
 ) ENGINE=InnoDB;
 
 -- FULLTEXT indexes (FR-17.1, Phase 6): added via ALTER TABLE rather than embedded in the
--- CREATE TABLE statements above, for the same dbDelta()-reliability reason as D-02/D-04's
--- FOREIGN KEY/CHECK constraints (PLAN.md §4 D-02, D-04).
+-- CREATE TABLE statements above, for the same dbDelta()-reliability reason as the FOREIGN KEY
+-- constraints added via ALTER TABLE elsewhere in Schema. D-04's CHECK constraint on sp_cards
+-- is NOT purely an ALTER-TABLE addition like these two — it's embedded directly in that
+-- table's own CREATE TABLE (see the D-04 snippet) and only redundantly re-declared via
+-- ALTER TABLE (guarded by an existence check) — don't assume CHECK follows this same pattern.
 -- ALTER TABLE {$wpdb->prefix}sp_threats ADD FULLTEXT INDEX ft_threats_search (title, description);
 -- ALTER TABLE {$wpdb->prefix}sp_cards   ADD FULLTEXT INDEX ft_cards_search (description_en, description_pl);
 ```

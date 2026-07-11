@@ -113,7 +113,7 @@ RustBastion 2026 is a bilingual (PL/EN) security-education platform built with a
 ## 3. Security Requirements
 
 ### SR-01 — Authentication & Authorization
-- SR-01.1 JWT authentication (RS256) via `jsonwebtoken`.
+- SR-01.1 JWT authentication (RS256 as originally planned here; **actually implemented as HS256 with a shared `JWT_SECRET`, matching app01's contract** — see `CLAUDE.md`) via `jsonwebtoken`.
 - SR-01.2 Admin CRUD endpoints (`/api/v1/admin/*`) require the `Admin` role in JWT claims.
 - SR-01.3 `/stride-heatmap` requires `Admin` or `Trainer` role.
 - SR-01.4 Tokens are stateless; access tokens expire after 1 hour (configurable).
@@ -276,7 +276,7 @@ RustBastion 2026 is a bilingual (PL/EN) security-education platform built with a
 | AC-01 | SQL injection via `?q=` | `sqlx::query!` compile-time-checked statement; no string-concatenation code path exists |
 | AC-02 | XSS via admin card update | `ammonia` (server) + DOMPurify (client) |
 | AC-03 | CSRF | Stateless JWT; no session; CORS origin allowlist |
-| AC-04 | JWT forgery | RS256 key pair; constant-time signature comparison (`jsonwebtoken`'s verification path) |
+| AC-04 | JWT forgery | As implemented: HS256 shared-secret signature (not the RS256 key pair originally planned here, see `CLAUDE.md`); constant-time signature comparison (`jsonwebtoken`'s verification path) |
 | AC-05 | Bot scraping all card suits | `governor`/Redis rate limit 60 req/min; 429 + Retry-After |
 | AC-06 | YAML card tampering | SHA-256 `integrity::verify`; ingestion aborts on mismatch |
 | AC-07 | Fake OWASP reference injection via admin | `OwaspRef` smart constructor + allowlist |

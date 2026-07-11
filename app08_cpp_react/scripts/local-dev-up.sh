@@ -2,11 +2,18 @@
 # Docker-less local dev stack for this machine only.
 #
 # docker-compose.yml is the real, portable way to run this project - use it
-# if Docker is installed. This script exists because Docker isn't installed
-# on THIS machine; it drives the same three pieces (Postgres, backend,
-# frontend) as standalone portable installs under C:\Users\krish\tools\
-# instead of containers. The tool paths below are specific to this machine -
-# don't assume this script works unmodified anywhere else.
+# if Docker is installed and a docker-compose.yml exists here (as of
+# 2026-07-11 it does not, see ../CLAUDE.md/../README.md). This script exists
+# because Docker isn't installed on THIS machine; it drives the same three
+# pieces (Postgres, backend, frontend) as standalone portable installs under
+# C:\Users\krish\tools\ instead of containers. The tool paths below are
+# specific to this machine - don't assume this script works unmodified
+# anywhere else.
+#
+# NOTE (fixed 2026-07-11): this script used to `cd backend && mvn
+# spring-boot:run` - a stale copy of app01_react's script that never actually
+# started the C++/Drogon backend (see ../CLAUDE.md "Local dev tooling"). It
+# now builds and runs the real Conan/CMake `cppcitadel` binary instead.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,11 +23,13 @@ mkdir -p "$RUN_DIR"
 TOOLS="/c/Users/krish/tools"
 PGBIN="$TOOLS/pgsql/bin"
 PGDATA="C:\\Users\\krish\\tools\\pgdata"
-JAVA_HOME="$TOOLS/jdk-21.0.11+10"
-MAVEN_BIN="$TOOLS/apache-maven-3.9.9/bin"
 
-export JAVA_HOME
-export PATH="$JAVA_HOME/bin:$MAVEN_BIN:$PGBIN:$PATH"
+export PATH="$PGBIN:$PATH"
+
+DB_NAME="${DB_NAME:-cppcitadel}"
+DB_USER="${DB_USER:-cppcitadel}"
+DB_PASSWORD="${DB_PASSWORD:-cppcitadel}"
+HTTP_PORT="${HTTP_PORT:-8080}"
 
 echo "== Postgres =="
 if "$PGBIN/pg_isready.exe" -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
@@ -31,18 +40,41 @@ else
     echo "started"
 fi
 
-echo "== Backend (Spring Boot, :8080) =="
-if curl -sf http://localhost:8080/api/v1/frameworks >/dev/null 2>&1; then
+echo "== Database + migrations ($DB_NAME) =="
+if ! psql -U postgres -h 127.0.0.1 -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1; then
+    psql -U postgres -h 127.0.0.1 -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}';"
+fi
+if ! psql -U postgres -h 127.0.0.1 -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1; then
+    psql -U postgres -h 127.0.0.1 -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};"
+    psql -U "$DB_USER" -h 127.0.0.1 -d "$DB_NAME" -f "$ROOT_DIR/backend/db/migrations/V1__init_schema.sql"
+    psql -U "$DB_USER" -h 127.0.0.1 -d "$DB_NAME" -f "$ROOT_DIR/backend/db/migrations/V2__seed.sql"
+    echo "created + migrated + seeded"
+else
+    echo "already exists (migrations are NOT re-run automatically - there is no migration tool/tracking table yet, see ../CLAUDE.md)"
+fi
+
+echo "== Backend build (Conan + CMake, C++23/Drogon, :$HTTP_PORT) =="
+BIN="$ROOT_DIR/backend/build/cppcitadel"
+if [ ! -x "$BIN" ]; then
+    (
+        cd "$ROOT_DIR/backend"
+        conan install . -of=build --build=missing -s build_type=Release
+        cmake --preset conan-release
+        cmake --build --preset conan-release
+    )
+fi
+
+if curl -sf "http://localhost:$HTTP_PORT/api/v1/frameworks" >/dev/null 2>&1; then
     echo "already running"
 else
     (
         cd "$ROOT_DIR/backend"
-        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME=securevision DB_USER=securevision DB_PASSWORD=${POSTGRES_PASSWORD}
-        nohup mvn spring-boot:run > "$RUN_DIR/backend.log" 2>&1 &
+        export DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME="$DB_NAME" DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD" HTTP_PORT="$HTTP_PORT"
+        nohup ./build/cppcitadel > "$RUN_DIR/backend.log" 2>&1 &
         echo $! > "$RUN_DIR/backend.pid"
     )
-    echo "starting (PID $(cat "$RUN_DIR/backend.pid")), waiting for :8080 ..."
-    if timeout 90 bash -c 'until curl -sf http://localhost:8080/api/v1/frameworks >/dev/null 2>&1; do sleep 2; done'; then
+    echo "starting (PID $(cat "$RUN_DIR/backend.pid")), waiting for :$HTTP_PORT ..."
+    if timeout 60 bash -c 'until curl -sf "http://localhost:'"$HTTP_PORT"'/api/v1/frameworks" >/dev/null 2>&1; do sleep 2; done'; then
         echo "up"
     else
         echo "TIMED OUT - tail of $RUN_DIR/backend.log:"
@@ -72,7 +104,6 @@ fi
 
 echo
 echo "Frontend:    http://localhost:5173"
-echo "Backend API: http://localhost:8080/api/v1/frameworks"
-echo "Swagger UI:  http://localhost:8080/swagger-ui.html"
+echo "Backend API: http://localhost:$HTTP_PORT/api/v1/frameworks"
 echo "Logs:        $RUN_DIR/{postgres,backend,frontend}.log"
 echo "Stop with:   scripts/local-dev-down.sh"

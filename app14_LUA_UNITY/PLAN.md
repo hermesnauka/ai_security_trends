@@ -247,11 +247,21 @@ GET  /api/v1/frameworks/:code  -> Framework | 404
 GET  /api/v1/threats           ?frameworkCode&severity&stride&tag&q&page&size&sort -> Page<ThreatSummary>
 GET  /api/v1/threats/:id       -> ThreatDetail | 404
 GET  /api/v1/cards             ?suitCode&edition -> Card[]                      # Phase 2
-GET  /api/v1/mitigations/:code -> Mitigation[] (with code_samples)              # Phase 2
+GET  /api/v1/cards/:cardId     -> Card | 404                                    # Phase 2
+GET  /api/v1/mitigations/:threatCode -> Mitigation[] (with code_samples)        # Phase 2
+GET  /api/v1/search            ?q -> SearchResult[]
+GET  /api/v1/matrix/llm        -> {rows: [{threatCode, cardIds[]}]}
+GET  /api/v1/matrix/stride-heatmap -> {categories: [{suitCode, cardCount}]}
+GET  /api/v1/export.csv        ?frameworkCode&severity -> text/csv
 POST /api/v1/game/sessions     {mode} -> GameSession                            # Phase 3
 POST /api/v1/game/sessions/:id/turn  {action, cardId?} -> GameSession           # Phase 3
 GET  /health                   -> {"status":"UP"}
 ```
+
+Note: `/api/v1/search`, `/api/v1/matrix/*`, and `/api/v1/export.csv` are already implemented
+in `backend/app/routes/` (search.lua, matrix.lua, export.lua) alongside the Phase-1 routes
+above — they were originally omitted from this table by mistake; they are not Phase 2/3
+work.
 
 `Page<T>` matches app01's Spring Data envelope shape (`{content, totalElements, totalPages,
 number, size}`) even though Lapis has no built-in equivalent — hand-built in the route
@@ -269,31 +279,51 @@ handler, same as every other non-Java sibling does.
   (Phase 3) — the turn-based board, reputation meter, and card-play UI described in
   `../docs/Security Architects+ Comptia+OWASP LLM top10__v01b.md`.
 
+**None of the six scenes above exist yet as actual Unity `.unity`/`.uxml` assets** — only the
+C# host layer they will eventually be built on (`Bootstrap.cs`, `LuaSandbox.cs`,
+`ApiBridge.cs`, `MiniJson.cs`) and the Lua gameplay/domain logic behind them
+(`card_engine.lua`, `game_modes.lua`, `i18n.lua`, `api_client.lua`, `main.lua`) are real. This
+is this section's design target, not a description of current state — no Unity Editor is
+available in this environment to author scene/UXML assets (see `CLAUDE.md`).
+
 ## 9. Repository/Directory Layout
 
 ```
 app14_LUA_UNITY/
 ├── backend/
 │   ├── app/
-│   │   ├── models/          # frameworks.lua, threats.lua, cards.lua, mitigations.lua, ...
-│   │   ├── routes/          # auth.lua, frameworks.lua, threats.lua, health.lua, ...
-│   │   └── services/        # card_deck_loader.lua, content_seeder.lua, jwt_service.lua,
-│   │                         # reference_validator.lua, integrity_checker.lua
+│   │   ├── models/          # framework.lua, threat.lua, card.lua, mitigation.lua,
+│   │   │                     # code_sample.lua, cross_reference.lua, content_hash.lua,
+│   │   │                     # threat_translation.lua, user.lua, game_session.lua
+│   │   ├── routes/          # auth.lua, frameworks.lua, threats.lua, cards.lua,
+│   │   │                     # mitigations.lua, search.lua, matrix.lua, export.lua, health.lua
+│   │   └── services/        # card_deck_loader.lua, card_decode_error.lua, content_seeder.lua,
+│   │                         # jwt_service.lua, rate_limiter.lua, reference_validator.lua,
+│   │                         # integrity_checker.lua
 │   ├── db/
-│   │   ├── migrations/
-│   │   └── seeds/           # symlink or copy of ../../docs/OWASP_stories + curated JSON
-│   ├── spec/                 # busted test suite
+│   │   ├── migrations/      # 10 migrations, 001-010 (nine content tables + game_sessions)
+│   │   └── seeds/           # copied from app13_ruby_FastApi's already-verified seed tree
+│   │                         # (Cornucopia decks/curations/translations, 50 code samples,
+│   │                         # frameworks/threats/mitigations/cross-references JSON)
+│   ├── spec/                 # busted test suite (routes/services/models)
+│   ├── app.lua
 │   ├── config.lua
-│   └── rockspec / Procfile
+│   ├── luaguard-dev-1.rockspec
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── frontend/
 │   ├── Assets/
-│   │   ├── Scenes/
-│   │   ├── Scripts/          # C# host: Bootstrap.cs, LuaSandbox.cs, ApiBridge.cs
-│   │   ├── StreamingAssets/lua/  # card_engine.lua, game_modes.lua, i18n.lua, api_client.lua
-│   │   └── UI/                # .uxml/.uss
-│   ├── ProjectSettings/
-│   └── Tests/                 # Unity Test Framework (EditMode) + a busted suite for the
-│                                # StreamingAssets Lua scripts run standalone (no Unity needed)
+│   │   ├── Scripts/          # C# host: Bootstrap.cs, LuaSandbox.cs, ApiBridge.cs, MiniJson.cs
+│   │   ├── StreamingAssets/lua/  # card_engine.lua, game_modes.lua, i18n.lua, api_client.lua,
+│   │   │                          # main.lua
+│   │   └── (no Scenes/ or UI/ yet — see §8's note: the six scenes below are a design
+│   │        target, not yet authored as Unity assets)
+│   ├── Packages/manifest.json
+│   ├── ProjectSettings/ProjectVersion.txt
+│   └── Tests/
+│       ├── EditMode/         # NUnit sandbox-escape tests (LuaSandboxTests.cs)
+│       └── Lua/spec/          # busted suite for the StreamingAssets Lua scripts, run
+│                               # standalone (no Unity needed)
 ├── docker-compose.yml
 ├── nginx/default.conf
 └── scripts/local-dev-up.sh / local-dev-down.sh

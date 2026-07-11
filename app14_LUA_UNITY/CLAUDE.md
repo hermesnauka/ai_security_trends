@@ -45,15 +45,20 @@ follow the shared Phase-1 API contract (`../CLAUDE.md`) — same category as `ap
 ## Current state (verify against the filesystem before trusting this)
 
 Check `backend/` and `frontend/` directly — this note will go stale the moment either grows.
-As of this rewrite: the five planning docs above are real and stack-accurate; `backend/` and
-`frontend/` scaffolding is described in `PLAN.md` §6/§9 but should be verified against what
-actually exists on disk, not assumed from this file. Nothing has been executed in this
-environment — no Lua/OpenResty/LuaRocks/Postgres/Unity runtime is available here (`../CLAUDE.md`);
-treat all backend/frontend source the same as every other sibling's "unverified but
-structurally correct" code until it runs somewhere that has these toolchains. Unity itself has
-no CLI-only path usable without the Editor/a license activation — the same class of "real
-source, never opened in the IDE" constraint as `app11_swift_ios` (no Xcode) and
-`app12_kotlin_android` (no Android Studio).
+As of this rewrite: `backend/` is a real, complete Phase-1+2 Lapis app — models, routes
+(including `search`/`matrix`/`export`, not just the ones in the original API contract table),
+services, 10 migrations, and a `busted` spec suite all exist under `backend/app/` and
+`backend/spec/`. `frontend/` has a real C# host layer (`Bootstrap.cs`, `LuaSandbox.cs`,
+`ApiBridge.cs`, `MiniJson.cs`) and real Lua gameplay logic
+(`Assets/StreamingAssets/lua/{i18n,api_client,card_engine,game_modes,main}.lua`) plus tests
+(`Tests/EditMode/`, `Tests/Lua/spec/`) — but **no Unity scenes or UI Toolkit documents exist
+yet** (no `Assets/Scenes/`, no `Assets/UI/`); the six scenes `PLAN.md` §8 describes are a
+design target, not built. Nothing has been executed in this environment — no Lua/OpenResty/
+LuaRocks/Postgres/Unity runtime is available here (`../CLAUDE.md`); treat all backend/frontend
+source the same as every other sibling's "unverified but structurally correct" code until it
+runs somewhere that has these toolchains. Unity itself has no CLI-only path usable without the
+Editor/a license activation — the same class of "real source, never opened in the IDE"
+constraint as `app11_swift_ios` (no Xcode) and `app12_kotlin_android` (no Android Studio).
 
 **Phase-1 scope only, not the full vision:** the browsing half (frameworks/threats/cards/
 mitigations/login, matching every client-server sibling) is what Phase 1 covers. The three
