@@ -41,16 +41,24 @@ sibling since app09 follows:
   `CHECK` constraint pair on `cards`), and services (`app/services/`: `CardFileLoader`
   D-06 allow-listed-keys YAML decoder, `ReferenceValidator`, `IntegrityChecker`,
   `ContentSeeder`, `JwtService`). `Rakefile` provides `db:migrate`/`db:seed`/`db:seed_admin`.
-  A representative RSpec suite (`spec/requests/`, `spec/services/`, `spec/models/`) covers
-  frameworks/threats/matrix/search request specs, `CardFileLoader`'s D-06 + uncurated-skip
-  behavior, the D-03 `CHECK` constraint, and an `rantly`-based code-sample-completeness
-  property test.
+  The RSpec suite now covers every service and model, not just a representative slice:
+  `spec/requests/` (auth, health, cards, mitigations, export, frameworks, threats, matrix,
+  search), `spec/services/` (`ReferenceValidator`, `CardFileLoader` — D-06 + uncurated-skip
+  behavior — `CodeSampleCompletenessSpec`'s `rantly`-based property test, `JwtService`,
+  `IntegrityChecker`, `ContentSeeder`), and `spec/models/` (`Card`'s D-03 `CHECK` constraint,
+  `User`'s bcrypt hashing + `users_role_check` constraint, `Threat`'s localization fallback +
+  `threats_severity_check`/FK constraints). `spec/spec_helper.rb` seeds a real test admin
+  user and clears Rack::Attack's in-memory cache store per-example so one example's login
+  attempts never bleed into another's rate-limit assertions.
   - **The exact "uncurated card crashes ingestion" bug independently caught and fixed in
     app11_swift_ios's and app12_kotlin_android's loaders was written correctly here from
     the start** — `CardFileLoader#build_seed` skips (returns `nil`) a card with no curation
     entry at all, and only raises `MissingCuratedSeverity` for a curated-but-malformed
     entry — see the doc comment there for why conflating those two cases is the bug this
     avoids.
+  - Writing this suite (even unexecuted) surfaced two real bugs, since fixed: Rack::Attack's
+    cache store leaking counters across examples (fixed via the per-example clear above), and
+    login returning the wrong HTTP status on bad credentials.
 - **`frontend/`**: a genuinely framework-free ES2022 app (`src/main.js` composition root,
   a ~30-line History-API `router.js`, a hand-written `i18n.js` store, `api-client.js`,
   and one `render(container, params)` module per view under `src/views/`) — the D-08
@@ -58,22 +66,35 @@ sibling since app09 follows:
   is a native `<dialog>` element. `package.json` wires `esbuild` (optional production
   minification only — `index.html` runs `src/main.js` directly as native browser ES
   modules, no bundling step is required for the app to function), `vitest`
-  (`src/__tests__/i18n.test.js`), and `@playwright/test` (`e2e/us01-frameworks.spec.js`,
-  `e2e/us03-threat-detail.spec.js`, 2 representative specs mirroring app11/app12's
-  equivalents — not all 19 user stories, same representative-slice pattern).
+  (`src/__tests__/i18n.test.js`, `api-client.test.js`, `router.test.js` — 23 unit tests
+  covering the locale store, the fetch wrapper's auth-header/param-filtering/error-body
+  behavior, and the History-API router's param extraction + `data-nav` click interception),
+  and `@playwright/test` (`e2e/us01-frameworks.spec.js`, `e2e/us03-threat-detail.spec.js`, 2
+  representative specs mirroring app11/app12's equivalents — not all 19 user stories, same
+  representative-slice pattern).
 - `docker-compose.yml` (Postgres 16 + backend + Nginx) and `nginx/default.conf`
   (proxies `/api/*`+`/health` to Puma, serves the frontend directly, falls back to
   `index.html` for client-side routes) exist at the app root. `scripts/local-dev-up.sh`/
   `local-dev-down.sh` follow the shared convention (`../CLAUDE.md`) for the Docker-less
   local Postgres instance.
 
-**Nothing has been executed.** No Ruby/Bundler/Postgres/Node runtime exists in the
-environment this was written in (`../CLAUDE.md`) — every file here is real,
-structurally-checked-by-hand Ruby/JS (brace/`end` balance checked by hand, cross-referenced
-for dangling constant/import names since no interpreter was available to verify), but none
-of it has been run through `bundle exec`, `rake db:migrate`, `rspec`, `npm`, or
-`docker compose up`. Treat it the same as every other sibling's "unverified but
-structurally correct" source.
+**The frontend unit suite has actually been run and passes** — as of 2026-07-11, Node 22 /
+npm 10 turned out to be available in this environment after all (the `../CLAUDE.md` "no
+Node runtime" note was true when first written, not currently): `npm install` +
+`npx vitest run` in `frontend/` gives 23/23 passing. That run also caught and fixed a real
+bug: `vitest.config.js` had no `exclude` for `e2e/`, so `vitest run` tried to collect the
+Playwright specs directly and failed with "Playwright Test did not expect test() to be
+called here" — now excluded.
+
+**Everything else remains unexecuted.** No Ruby/Bundler/Postgres runtime exists in this
+environment, so the full RSpec suite, `rake db:migrate`, and `docker compose up` are still
+unverified — every backend file is real, structurally-checked-by-hand Ruby (brace/`end`
+balance checked by hand, cross-referenced for dangling constant/import names since no
+interpreter was available to verify) but none of it has been run through `bundle exec` or
+`rspec`. The Playwright E2E specs also haven't run (no browsers installed via
+`npx playwright install`, and no server for them to point at). Treat backend + E2E the same
+as every other sibling's "unverified but structurally correct" source; treat the frontend
+unit suite as genuinely green.
 
 **Not built at all:** admin CRUD screens, JWT roles beyond `ADMIN`, async export-job
 polling, a mobile-vs-web matrix endpoint, `Login`-gated write routes beyond login itself
