@@ -109,6 +109,16 @@ final class Threat_Repository {
 		return $row instanceof \stdClass ? $row : null;
 	}
 
+	public function by_framework_id( int $framework_id ): array {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'sp_threats';
+
+		return $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE framework_id = %d ORDER BY code ASC", $framework_id ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+	}
+
 	public function by_code( string $code ): ?object {
 		global $wpdb;
 

@@ -95,12 +95,50 @@ threats** (the full OWASP Web + LLM Top 10 set, not a smaller slice this time), 
 (FR-18.6), wired from `?lang=` in `Threat_Controller`, `archive-threat.php`, and
 `single-threat.php`.
 
+**Search/export/matrix are now built** (PLAN.md §6 Phase 6). Three schema additions beyond
+the original PLAN.md §5.1 text (now documented there too, same pattern as the mitigations
+`slug` column in Phase 4): a `sp_export_jobs` table, and FULLTEXT indexes on
+`sp_threats(title, description)` / `sp_cards(description_en, description_pl)` — both added
+via `ALTER TABLE` in `Schema::add_fulltext_indexes()`/`add_export_jobs...` rather than
+embedded in the `dbDelta()` `CREATE TABLE` strings, for the same reliability reason as
+D-02/D-04's constraints. Specifics worth knowing:
+
+- **Search** (`Search_Repository`/`Service`, `GET /search`, `search-results.php`): real
+  `MATCH...AGAINST` natural-language-mode search across both threats and cards, with
+  server-side `<mark>`-highlighted excerpts.
+- **Export** (`sp_export_jobs`, `Export_Job` cron class, `Export_Controller`,
+  `export-panel.js`): **CSV only — PDF is explicitly rejected with a 422**, not silently
+  downgraded, since `composer.json` has no PDF library. The REST create route never blocks
+  on the export itself; `wp_schedule_single_event()` runs `Export_Job::run()` out-of-band,
+  polled via `/export/status/{jobId}`. The no-JS baseline is a plain link to the REST
+  endpoint that returns `{jobId, statusUrl}` JSON directly — functional, not seamless;
+  `export-panel.js` intercepts the click and polls for a download link.
+- **Matrix / cross-references / STRIDE heatmap** (`Matrix_Service`/`Controller`, `matrix.php`,
+  `stride-heatmap.php`): `/matrix/llm/` has real data on both sides (OWASP LLM Top 10 threats
+  × Cornucopia LLM cards, matched via each card's curated `owasp_refs`). `/matrix/agentic/`
+  returns an **honest empty-state** — no OWASP Agentic AI Top 10 threats are seeded at all
+  (`requirements.md` DR-01.4), so it shows only the AAI suit cards with a note, rather than
+  fabricating comparison rows. `/matrix/mobile-vs-web/` is a side-by-side juxtaposition, not
+  a formal crosswalk — no official MASVS↔Web-Top-10 mapping exists since they cover different
+  application layers. `/stride-heatmap/` (capability-gated, `manage_securepress` or the new
+  `securepress_trainer` capability — 401 if logged out, 403 if logged in but lacking the
+  capability) is a simplified count of curated STRIDE-suit cards per category, **not**
+  "per system component" as `PLAN.md`'s own aspirational description reads — this schema has
+  no system-component entity to attach coverage to. `sp_cross_references` (defined since
+  Phase 1, unused until now) is seeded with **4 genuinely-defensible** OWASP-Web↔OWASP-LLM
+  relationships (e.g. A03:2021 Injection ↔ LLM01:2025 Prompt Injection), not an exhaustive
+  cross-framework matrix, and now renders on `single-threat.php` alongside the kill-chain.
+- The `.pot`/`.po`/`.mo` files from Phase 5 were regenerated to include the ~24 new strings
+  this phase introduced, using the same one-off Python tooling (see the i18n note above) —
+  independently re-verified with Python's `gettext` module after regenerating.
+
 **Still not built:** mitigations/code samples for any threat or card beyond the 5 from Phase
-4, admin screens (`includes/admin/` is an empty directory), search/export (Phase 6), the
-dedicated stride-heatmap/matrix pages, and all tests (`tests/`, `e2e/` don't exist yet —
-nothing in this plugin has been executed against a real WordPress+MySQL instance; no
-`composer install` has been run either). Verify against the filesystem, not this paragraph,
-before assuming a later-phase feature exists.
+4, admin screens (`includes/admin/` is an empty directory), the dedicated
+`stride-catalogue.php`/`devops-security.php` templates (still simplified to `suit-archive.php`,
+per the Phase 3 note above), and all tests (`tests/`, `e2e/` don't exist yet — nothing in this
+plugin has been executed against a real WordPress+MySQL instance; no `composer install` has
+been run either). Verify against the filesystem, not this paragraph, before assuming a
+later-phase feature exists.
 
 ## Architecture: one WordPress plugin, not a backend + SPA
 

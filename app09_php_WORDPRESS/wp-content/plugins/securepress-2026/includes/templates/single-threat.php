@@ -133,6 +133,21 @@ get_header();
 	<section id="cross-references">
 		<h2><?php esc_html_e( 'Powiązania Cross-Framework', 'securepress-2026' ); ?></h2>
 
+		<?php $cross_refs = ( new \SecurePress\Service\Matrix_Service() )->cross_references( $threat['code'] ); ?>
+		<?php if ( array() === $cross_refs ) : ?>
+			<p><?php esc_html_e( 'Brak jeszcze zdefiniowanych powiązań dla tego zagrożenia.', 'securepress-2026' ); ?></p>
+		<?php else : ?>
+			<ul class="securepress-cross-references" data-testid="cross-references">
+				<?php foreach ( $cross_refs as $ref ) : ?>
+					<li>
+						<span class="securepress-crossref-type"><?php echo esc_html( $ref['relationshipType'] ); ?></span>
+						<strong><?php echo esc_html( $ref['targetCode'] ); ?></strong> — <?php echo esc_html( $ref['targetTitle'] ); ?>
+						<p><?php echo esc_html( $ref['description'] ); ?></p>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+
 		<?php $kill_chain = ( new \SecurePress\Service\Killchain_Service() )->for_threat_code( $threat['code'] ); ?>
 		<?php if ( array() !== $kill_chain ) : ?>
 			<h3><?php esc_html_e( 'Oś czasu MITRE ATLAS (Kill-Chain)', 'securepress-2026' ); ?></h3>

@@ -306,6 +306,26 @@ CREATE TABLE {$wpdb->prefix}sp_content_hashes (
     is_valid     TINYINT(1)   NOT NULL,
     verified_by  VARCHAR(30)  NOT NULL DEFAULT 'securepress-integrity-verifier'
 ) ENGINE=InnoDB;
+
+-- {$wpdb->prefix}sp_export_jobs  (FR-17.3/17.4, Phase 6 — added when export was built, format is
+-- CSV-only: no PDF library is in composer.json, so a 'pdf' value is rejected at the API layer
+-- rather than silently downgraded)
+CREATE TABLE {$wpdb->prefix}sp_export_jobs (
+    job_id         VARCHAR(36)  NOT NULL PRIMARY KEY,
+    status         ENUM('pending','processing','completed','failed') NOT NULL DEFAULT 'pending',
+    format         ENUM('csv') NOT NULL,
+    framework_code VARCHAR(32) NULL,
+    file_path      VARCHAR(500) NULL,
+    error_message  VARCHAR(500) NULL,
+    created_at     DATETIME NOT NULL,
+    completed_at   DATETIME NULL
+) ENGINE=InnoDB;
+
+-- FULLTEXT indexes (FR-17.1, Phase 6): added via ALTER TABLE rather than embedded in the
+-- CREATE TABLE statements above, for the same dbDelta()-reliability reason as D-02/D-04's
+-- FOREIGN KEY/CHECK constraints (PLAN.md §4 D-02, D-04).
+-- ALTER TABLE {$wpdb->prefix}sp_threats ADD FULLTEXT INDEX ft_threats_search (title, description);
+-- ALTER TABLE {$wpdb->prefix}sp_cards   ADD FULLTEXT INDEX ft_cards_search (description_en, description_pl);
 ```
 
 All tables use `{$wpdb->prefix}` and `InnoDB` (required for foreign keys and `CHECK` enforcement).

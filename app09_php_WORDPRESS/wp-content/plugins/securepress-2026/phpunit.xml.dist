@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    beStrictAboutOutputDuringTests="true"
+>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/unit</directory>
+        </testsuite>
+        <testsuite name="property">
+            <directory>tests/property</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage>
+        <include>
+            <directory suffix=".php">includes/service</directory>
+        </include>
+    </coverage>
+
+    <php>
+        <const name="WP_TESTS_DOMAIN" value="securepress.test"/>
+        <const name="WP_TESTS_EMAIL" value="admin@securepress.test"/>
+        <const name="WP_TESTS_TITLE" value="SecurePress 2026 Test Suite"/>
+        <env name="WP_PHP_BINARY" value="php"/>
+    </php>
+</phpunit>

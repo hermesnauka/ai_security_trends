@@ -170,18 +170,8 @@ final class Matrix_Service {
 	}
 
 	private function threats_for_framework( string $framework_code ): array {
-		global $wpdb;
-
 		$framework = $this->frameworks->by_code( $framework_code );
 
-		if ( null === $framework ) {
-			return array();
-		}
-
-		$table = $wpdb->prefix . 'sp_threats';
-
-		return $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$table} WHERE framework_id = %d ORDER BY code ASC", $framework->id ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		);
+		return null !== $framework ? $this->threats->by_framework_id( (int) $framework->id ) : array();
 	}
 }

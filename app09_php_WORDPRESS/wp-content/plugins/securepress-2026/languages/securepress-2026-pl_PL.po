@@ -21,7 +21,11 @@ msgstr[0] "%d zagrożenie"
 msgstr[1] "%d zagrożenia"
 msgstr[2] "%d zagrożeń"
 
-#: includes/templates/single-threat.php:115
+#: includes/rest-api/class-search-controller.php:39
+msgid "A search query is required."
+msgstr "Wymagane jest zapytanie wyszukiwania."
+
+#: includes/templates/single-threat.php:121
 msgid "ATTACK DEMO — kod podatny, kliknij aby potwierdzić i zobaczyć (nie używać w produkcji)"
 msgstr "ATTACK DEMO — kod podatny, kliknij aby potwierdzić i zobaczyć (nie używać w produkcji)"
 
@@ -29,23 +33,39 @@ msgstr "ATTACK DEMO — kod podatny, kliknij aby potwierdzić i zobaczyć (nie u
 msgid "AUTONOMY RISK"
 msgstr "AUTONOMY RISK"
 
-#: includes/templates/single-threat.php:93
+#: includes/rest-api/class-rest-api.php:203
+msgid "Authentication is required."
+msgstr "Wymagane jest uwierzytelnienie."
+
+#: includes/templates/single-threat.php:99
 msgid "Brak jeszcze próbek kodu dla tej mitigacji."
 msgstr "Brak jeszcze próbek kodu dla tej mitigacji."
 
-#: includes/templates/single-threat.php:65
+#: includes/templates/single-threat.php:71
 msgid "Brak jeszcze zdefiniowanych mitigacji dla tego zagrożenia."
 msgstr "Brak jeszcze zdefiniowanych mitigacji dla tego zagrożenia."
+
+#: includes/templates/single-threat.php:138
+msgid "Brak jeszcze zdefiniowanych powiązań dla tego zagrożenia."
+msgstr "Brak jeszcze zdefiniowanych powiązań dla tego zagrożenia."
 
 #: includes/templates/suit-archive.php:82
 msgid "Brak kart dla podanego suit/edition."
 msgstr "Brak kart dla podanego suit/edition."
 
-#: includes/templates/archive-threat.php:72
+#: includes/templates/archive-threat.php:78
 msgid "Brak wyników dla podanych filtrów."
 msgstr "Brak wyników dla podanych filtrów."
 
-#: includes/class-plugin.php:182
+#: includes/templates/search-results.php:60
+msgid "Brak wyników wśród kart."
+msgstr "Brak wyników wśród kart."
+
+#: includes/templates/search-results.php:45
+msgid "Brak wyników wśród zagrożeń."
+msgstr "Brak wyników wśród zagrożeń."
+
+#: includes/class-plugin.php:200
 msgid "Brak wyników."
 msgstr "Brak wyników."
 
@@ -53,13 +73,33 @@ msgstr "Brak wyników."
 msgid "Digital-by-Default Harms"
 msgstr "Digital-by-Default Harms"
 
-#: includes/templates/archive-threat.php:54
+#: includes/templates/archive-threat.php:94
+msgid "Eksportuj do CSV"
+msgstr "Eksportuj do CSV"
+
+#: includes/rest-api/class-export-controller.php:66
+msgid "Export job not found."
+msgstr "Nie znaleziono zadania eksportu."
+
+#: includes/templates/archive-threat.php:60
 msgid "Filtruj"
 msgstr "Filtruj"
 
 #: includes/rest-api/class-framework-controller.php:35
 msgid "Framework not found."
 msgstr "Nie znaleziono frameworku."
+
+#: includes/templates/stride-heatmap.php:48
+msgid "Heatmapa STRIDE"
+msgstr "Heatmapa STRIDE"
+
+#: includes/templates/matrix.php:59
+msgid "Karty AAI (Agentic AI):"
+msgstr "Karty AAI (Agentic AI):"
+
+#: includes/templates/search-results.php:58
+msgid "Karty Cornucopia"
+msgstr "Karty Cornucopia"
 
 #: includes/templates/suit-archive.php:44
 #. translators: %s: Cornucopia deck edition, e.g. webapp, mlsec
@@ -71,53 +111,93 @@ msgstr "Karty Cornucopia — %s"
 msgid "Karty Cornucopia — Suit %s"
 msgstr "Karty Cornucopia — Suit %s"
 
-#: includes/templates/single-threat.php:46
+#: includes/templates/matrix.php:67
+msgid "Kategorie MASVS"
+msgstr "Kategorie MASVS"
+
+#: includes/templates/single-threat.php:52
 msgid "Kod"
 msgstr "Kod"
 
-#: includes/templates/single-threat.php:45
-#: includes/templates/single-threat.php:63
+#: includes/templates/matrix.php:32
+#: includes/templates/matrix.php:62
+msgid "MASVS 2.0 ↔ OWASP Web Top 10"
+msgstr "MASVS 2.0 ↔ OWASP Web Top 10"
+
+#: includes/templates/matrix.php:26
+msgid "Macierze Cross-Framework"
+msgstr "Macierze Cross-Framework"
+
+#: includes/templates/single-threat.php:51
+#: includes/templates/single-threat.php:69
 msgid "Mitigacje"
 msgstr "Mitigacje"
 
-#: includes/templates/single-threat.php:73
+#: includes/templates/stride-heatmap.php:23
+msgid "Musisz się zalogować, aby zobaczyć tę stronę."
+msgstr "Musisz się zalogować, aby zobaczyć tę stronę."
+
+#: includes/templates/single-threat.php:79
 msgid "Nakład:"
 msgstr "Nakład:"
 
-#: includes/templates/single-threat.php:132
+#: includes/templates/stride-heatmap.php:35
+msgid "Nie masz uprawnień, aby zobaczyć tę stronę."
+msgstr "Nie masz uprawnień, aby zobaczyć tę stronę."
+
+#: includes/templates/matrix.php:31
+#: includes/templates/matrix.php:54
+msgid "OWASP Agentic AI Top 10 ↔ OWASP LLM Top 10"
+msgstr "OWASP Agentic AI Top 10 ↔ OWASP LLM Top 10"
+
+#: includes/templates/matrix.php:30
+#: includes/templates/matrix.php:36
+msgid "OWASP LLM Top 10 ↔ Karty Cornucopia LLM"
+msgstr "OWASP LLM Top 10 ↔ Karty Cornucopia LLM"
+
+#: includes/templates/matrix.php:73
+msgid "OWASP Web Top 10"
+msgstr "OWASP Web Top 10"
+
+#: includes/rest-api/class-export-controller.php:35
+msgid "Only format=csv is currently supported (PDF export is not implemented)."
+msgstr "Obecnie obsługiwany jest tylko format=csv (eksport PDF nie jest zaimplementowany)."
+
+#: includes/templates/single-threat.php:153
 msgid "Oś czasu MITRE ATLAS (Kill-Chain)"
 msgstr "Oś czasu MITRE ATLAS (Kill-Chain)"
 
-#: includes/templates/single-threat.php:58
+#: includes/templates/single-threat.php:64
 msgid "Powierzchnia Ataku"
 msgstr "Powierzchnia Ataku"
 
-#: includes/templates/single-threat.php:47
+#: includes/templates/single-threat.php:53
 msgid "Powiązania"
 msgstr "Powiązania"
 
-#: includes/templates/single-threat.php:128
+#: includes/templates/single-threat.php:134
 msgid "Powiązania Cross-Framework"
 msgstr "Powiązania Cross-Framework"
 
-#: includes/templates/single-threat.php:43
-#: includes/templates/single-threat.php:51
+#: includes/templates/single-threat.php:49
+#: includes/templates/single-threat.php:57
 msgid "Przegląd"
 msgstr "Przegląd"
 
-#: includes/templates/archive-threat.php:35
+#: includes/templates/archive-threat.php:41
 msgid "Przeglądarka Zagrożeń"
 msgstr "Przeglądarka Zagrożeń"
 
-#: includes/templates/single-threat.php:81
+#: includes/templates/single-threat.php:87
 msgid "Próbki Kodu"
 msgstr "Próbki Kodu"
 
+#: includes/rest-api/class-search-controller.php:31
 #: includes/rest-api/class-threat-controller.php:42
 msgid "Search query must be 200 characters or fewer."
 msgstr "Zapytanie wyszukiwania musi mieć maksymalnie 200 znaków."
 
-#: includes/class-plugin.php:95
+#: includes/class-plugin.php:99
 #. translators: %s: minimum required MySQL version
 msgid "SecurePress 2026 requires MySQL %s or newer (or MariaDB 10.2.1+) for CHECK constraint enforcement, and refuses to activate on an older server rather than silently losing that guarantee."
 msgstr "SecurePress 2026 wymaga MySQL %s lub nowszego (albo MariaDB 10.2.1+) do wymuszania ograniczenia CHECK i odmawia aktywacji na starszym serwerze zamiast po cichu tracić tę gwarancję."
@@ -126,19 +206,21 @@ msgstr "SecurePress 2026 wymaga MySQL %s lub nowszego (albo MariaDB 10.2.1+) do 
 msgid "SecurePress 2026 — Katalog Frameworków Bezpieczeństwa"
 msgstr "SecurePress 2026 — Katalog Frameworków Bezpieczeństwa"
 
-#: includes/class-plugin.php:116
+#: includes/class-plugin.php:122
 msgid "SecurePress Editor"
 msgstr "Redaktor SecurePress"
 
-#: includes/templates/archive-threat.php:44
+#: includes/templates/archive-threat.php:50
 msgid "Severity"
 msgstr "Severity"
 
-#: includes/templates/single-threat.php:74
+#: includes/templates/single-threat.php:80
 msgid "Skuteczność:"
 msgstr "Skuteczność:"
 
-#: includes/templates/archive-threat.php:39
+#: includes/templates/archive-threat.php:45
+#: includes/templates/search-results.php:36
+#: includes/templates/search-results.php:39
 msgid "Szukaj"
 msgstr "Szukaj"
 
@@ -150,7 +232,7 @@ msgstr "Ta talia nie jest listą podatności technicznych z poziomem severity �
 msgid "Threat not found."
 msgstr "Nie znaleziono zagrożenia."
 
-#: includes/rest-api/class-rest-api.php:97
+#: includes/rest-api/class-rest-api.php:183
 msgid "Too many requests."
 msgstr "Zbyt wiele żądań."
 
@@ -158,16 +240,20 @@ msgstr "Zbyt wiele żądań."
 msgid "Treść ma charakter edukacyjny i musi być zweryfikowana wobec oficjalnych źródeł."
 msgstr "Treść ma charakter edukacyjny i musi być zweryfikowana wobec oficjalnych źródeł."
 
-#: includes/templates/single-threat.php:72
+#: includes/templates/single-threat.php:78
 msgid "Typ:"
 msgstr "Typ:"
 
-#: includes/templates/single-threat.php:44
-#: includes/templates/single-threat.php:56
+#: includes/templates/stride-heatmap.php:50
+msgid "Uproszczona heatmapa: liczba kuratorowanych kart per kategoria STRIDE, nie pokrycie per komponent systemu."
+msgstr "Uproszczona heatmapa: liczba kuratorowanych kart per kategoria STRIDE, nie pokrycie per komponent systemu."
+
+#: includes/templates/single-threat.php:50
+#: includes/templates/single-threat.php:62
 msgid "Wektory Ataku"
 msgstr "Wektory Ataku"
 
-#: includes/templates/archive-threat.php:46
+#: includes/templates/archive-threat.php:52
 msgid "Wszystkie"
 msgstr "Wszystkie"
 
@@ -175,9 +261,25 @@ msgstr "Wszystkie"
 msgid "Wybór języka"
 msgstr "Wybór języka"
 
-#: includes/templates/single-threat.php:25
+#: includes/templates/search-results.php:32
+msgid "Wyszukiwanie"
+msgstr "Wyszukiwanie"
+
+#: includes/rest-api/class-rest-api.php:211
+msgid "You do not have permission to view this resource."
+msgstr "Nie masz uprawnień, aby zobaczyć ten zasób."
+
+#: includes/templates/search-results.php:43
+msgid "Zagrożenia"
+msgstr "Zagrożenia"
+
+#: includes/templates/single-threat.php:31
 msgid "Zagrożenie nie zostało znalezione."
 msgstr "Zagrożenie nie zostało znalezione."
+
+#: includes/templates/matrix.php:64
+msgid "Zestawienie porównawcze, nie formalny crosswalk — MASVS i OWASP Web Top 10 opisują różne warstwy aplikacji."
+msgstr "Zestawienie porównawcze, nie formalny crosswalk — MASVS i OWASP Web Top 10 opisują różne warstwy aplikacji."
 
 #: includes/templates/digital-harms.php:54
 #: includes/templates/suit-archive.php:62
