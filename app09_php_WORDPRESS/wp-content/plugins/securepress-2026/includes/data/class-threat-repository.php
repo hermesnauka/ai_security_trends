@@ -109,6 +109,18 @@ final class Threat_Repository {
 		return $row instanceof \stdClass ? $row : null;
 	}
 
+	public function by_code( string $code ): ?object {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'sp_threats';
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE code = %s", $code ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+
+		return $row instanceof \stdClass ? $row : null;
+	}
+
 	public function insert_seed_threat( int $framework_id, array $attributes ): int {
 		global $wpdb;
 

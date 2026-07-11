@@ -21,15 +21,46 @@ final class Template_Loader {
 		add_filter( 'query_vars', array( $this, 'register_query_vars' ) );
 	}
 
+	/**
+	 * @var array<string, array{page: string, param: string}> slug => target,
+	 *      per PLAN.md §8's /frameworks/{slug}/ route table. `stride` and
+	 *      `devops-security` are simplified to suit-archive.php here rather
+	 *      than the dedicated stride-catalogue.php/devops-security.php from
+	 *      §8 — the heatmap/DVO+CLD+BOT-combined views are follow-up work,
+	 *      not part of this ingestion pass.
+	 */
+	private const FRAMEWORK_SLUGS = array(
+		'website-app'       => array( 'page' => 'suit-archive', 'param' => 'edition=webapp' ),
+		'frontend-security' => array( 'page' => 'suit-archive', 'param' => 'suit=fre' ),
+		'llm-security'      => array( 'page' => 'suit-archive', 'param' => 'suit=llm' ),
+		'agentic-ai'        => array( 'page' => 'suit-archive', 'param' => 'suit=aai' ),
+		'ml-security'       => array( 'page' => 'suit-archive', 'param' => 'edition=mlsec' ),
+		'mobile-security'   => array( 'page' => 'suit-archive', 'param' => 'edition=mobileapp' ),
+		'stride'            => array( 'page' => 'suit-archive', 'param' => 'edition=eop' ),
+		'devops-security'   => array( 'page' => 'suit-archive', 'param' => 'suit=dvo' ),
+		'digital-harms'     => array( 'page' => 'digital-harms', 'param' => '' ),
+	);
+
 	public function register_rewrite_rules(): void {
 		add_rewrite_rule( '^security-catalogue/?$', 'index.php?securepress_page=home', 'top' );
 		add_rewrite_rule( '^threats/?$', 'index.php?securepress_page=archive-threat', 'top' );
 		add_rewrite_rule( '^threats/([0-9]+)/?$', 'index.php?securepress_page=single-threat&securepress_threat_id=$matches[1]', 'top' );
+
+		foreach ( self::FRAMEWORK_SLUGS as $slug => $target ) {
+			$query = 'index.php?securepress_page=' . $target['page'];
+			if ( '' !== $target['param'] ) {
+				$query .= '&' . $target['param'];
+			}
+			add_rewrite_rule( '^frameworks/' . preg_quote( $slug, '/' ) . '/?$', $query, 'top' );
+		}
 	}
 
 	public function register_query_vars( array $vars ): array {
 		$vars[] = 'securepress_page';
 		$vars[] = 'securepress_threat_id';
+		$vars[] = 'suit';
+		$vars[] = 'edition';
+		$vars[] = 'lang';
 
 		return $vars;
 	}
@@ -44,5 +75,20 @@ final class Template_Loader {
 		$candidate = SECUREPRESS_PLUGIN_DIR . 'includes/templates/' . $page . '.php';
 
 		return is_readable( $candidate ) ? $candidate : $template;
+	}
+
+	/**
+	 * Reads a param from the literal query string first (so /threats/?suit=fre
+	 * keeps working exactly as before) and falls back to the WordPress query
+	 * var populated by a pretty-permalink rewrite match (/frameworks/.../).
+	 */
+	public static function param( string $key ): ?string {
+		if ( isset( $_GET[ $key ] ) ) {
+			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) );
+		}
+
+		$value = get_query_var( $key );
+
+		return '' !== $value && false !== $value ? sanitize_text_field( (string) $value ) : null;
 	}
 }

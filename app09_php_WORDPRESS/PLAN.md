@@ -261,6 +261,7 @@ CREATE TABLE {$wpdb->prefix}sp_cards (
 -- {$wpdb->prefix}sp_mitigations
 CREATE TABLE {$wpdb->prefix}sp_mitigations (
     id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    slug           VARCHAR(100) NOT NULL UNIQUE, -- stable seed-data key, e.g. "sql-injection-prevention"
     threat_id      BIGINT UNSIGNED NULL,
     card_id        VARCHAR(10) NULL,
     title          VARCHAR(300) NOT NULL,

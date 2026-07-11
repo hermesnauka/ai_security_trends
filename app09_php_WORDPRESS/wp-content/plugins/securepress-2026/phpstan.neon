@@ -1,0 +1,10 @@
+includes:
+    - phpstan-rules/bootstrap.neon
+
+parameters:
+    level: 6
+    paths:
+        - includes
+    excludePaths:
+        - vendor/*
+

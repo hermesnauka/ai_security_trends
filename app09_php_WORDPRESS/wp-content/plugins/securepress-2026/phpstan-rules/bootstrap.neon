@@ -1,0 +1,5 @@
+services:
+    -
+        class: SecurePress\PHPStan\NoIntegrityVerifierInRestApi
+        tags:
+            - phpstan.rules.rule

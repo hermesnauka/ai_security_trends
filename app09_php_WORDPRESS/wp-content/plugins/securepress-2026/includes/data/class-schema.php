@@ -198,6 +198,7 @@ final class Schema {
 
 			"CREATE TABLE {$p}sp_mitigations (
                 id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                slug            VARCHAR(100) NOT NULL,
                 threat_id       BIGINT UNSIGNED NULL,
                 card_id         VARCHAR(10) NULL,
                 title           VARCHAR(300) NOT NULL,
@@ -206,6 +207,7 @@ final class Schema {
                 effort          ENUM('low','medium','high') NOT NULL,
                 effectiveness   ENUM('partial','significant','full') NOT NULL,
                 PRIMARY KEY  (id),
+                UNIQUE KEY slug (slug),
                 KEY threat_id (threat_id),
                 KEY card_id (card_id)
             ) {$charset_collate};",

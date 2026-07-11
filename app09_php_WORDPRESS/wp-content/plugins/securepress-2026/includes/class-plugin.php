@@ -4,6 +4,9 @@ declare( strict_types = 1 );
 
 namespace SecurePress;
 
+use SecurePress\Cards\Card_Ingestion_Service;
+use SecurePress\Cron\Periodic_Reverify_Job;
+use SecurePress\Cron\Reingest_Deck_Job;
 use SecurePress\Data\Schema;
 use SecurePress\Data\Seed_Loader;
 use SecurePress\Rest_Api\Rest_Api;
@@ -34,6 +37,8 @@ final class Plugin {
 		add_action( 'template_include', array( new Template_Loader(), 'maybe_override' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_filter( 'xmlrpc_enabled', '__return_false' );
+		add_action( 'init', array( Periodic_Reverify_Job::class, 'register' ) );
+		add_action( 'init', array( Reingest_Deck_Job::class, 'register' ) );
 	}
 
 	public function load_textdomain(): void {
@@ -98,6 +103,7 @@ final class Plugin {
 		Schema::create_tables();
 		self::register_role_and_capability();
 		( new Seed_Loader() )->seed();
+		( new Card_Ingestion_Service() )->ingest_all();
 		update_option( 'securepress_db_version', SECUREPRESS_DB_VERSION );
 		flush_rewrite_rules();
 	}
