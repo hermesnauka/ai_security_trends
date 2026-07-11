@@ -13,9 +13,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use SecurePress\Service\Threat_Service;
 use SecurePress\Templates\Language_Switcher;
+use SecurePress\Templates\Template_Loader;
+
+$requested_lang = Template_Loader::param( 'lang' );
+$locale         = in_array( $requested_lang, array( 'pl', 'en' ), true )
+	? $requested_lang
+	: ( str_starts_with( get_locale(), 'en' ) ? 'en' : 'pl' );
 
 $threat_id = (int) get_query_var( 'securepress_threat_id' );
-$threat    = ( new Threat_Service() )->find( $threat_id );
+$threat    = ( new Threat_Service() )->find( $threat_id, $locale );
 
 if ( null === $threat ) {
 	global $wp_query;

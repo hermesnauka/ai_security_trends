@@ -68,7 +68,7 @@ final class Threat_Controller {
 
 		$filter = Threat_Filter::from_request( $request );
 
-		return new WP_REST_Response( $this->service->list( $filter ), 200 );
+		return new WP_REST_Response( $this->service->list( $filter, $locale ), 200 );
 	}
 
 	/**
@@ -87,7 +87,7 @@ final class Threat_Controller {
 
 	public function show( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$id     = (int) $request->get_param( 'id' );
-		$threat = $this->service->find( $id );
+		$threat = $this->service->find( $id, $this->locale_from_request( $request ) );
 
 		if ( null === $threat ) {
 			return new WP_Error(

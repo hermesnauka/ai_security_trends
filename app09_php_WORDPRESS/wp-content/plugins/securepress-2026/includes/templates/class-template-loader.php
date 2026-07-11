@@ -45,6 +45,10 @@ final class Template_Loader {
 		add_rewrite_rule( '^security-catalogue/?$', 'index.php?securepress_page=home', 'top' );
 		add_rewrite_rule( '^threats/?$', 'index.php?securepress_page=archive-threat', 'top' );
 		add_rewrite_rule( '^threats/([0-9]+)/?$', 'index.php?securepress_page=single-threat&securepress_threat_id=$matches[1]', 'top' );
+		add_rewrite_rule( '^search/?$', 'index.php?securepress_page=search-results', 'top' );
+		add_rewrite_rule( '^matrix/?$', 'index.php?securepress_page=matrix', 'top' );
+		add_rewrite_rule( '^matrix/([a-z-]+)/?$', 'index.php?securepress_page=matrix&securepress_matrix_type=$matches[1]', 'top' );
+		add_rewrite_rule( '^stride-heatmap/?$', 'index.php?securepress_page=stride-heatmap', 'top' );
 
 		foreach ( self::FRAMEWORK_SLUGS as $slug => $target ) {
 			$query = 'index.php?securepress_page=' . $target['page'];
@@ -58,9 +62,11 @@ final class Template_Loader {
 	public function register_query_vars( array $vars ): array {
 		$vars[] = 'securepress_page';
 		$vars[] = 'securepress_threat_id';
+		$vars[] = 'securepress_matrix_type';
 		$vars[] = 'suit';
 		$vars[] = 'edition';
 		$vars[] = 'lang';
+		$vars[] = 'q';
 
 		return $vars;
 	}

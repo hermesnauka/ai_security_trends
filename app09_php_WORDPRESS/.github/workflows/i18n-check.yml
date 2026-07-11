@@ -1,0 +1,55 @@
+name: i18n drift check (FR-18.7 / NFR-06.3)
+
+# Regenerates languages/securepress-2026.pot with the real WP-CLI i18n tool
+# and fails if it differs from the committed file - the actual documented
+# tool (wp i18n make-pot / make-mo), not a hand-rolled approximation. This
+# plugin's current .pot/.po/.mo files were produced by a one-off Python
+# extraction plus a hand-written MO compiler (see CLAUDE.md's i18n section
+# for why, and for the deliberately-untranslated terms a future run of the
+# real tool must not "fix"), since neither WP-CLI nor msgfmt is available in
+# the sandbox that produced them. This workflow is the real, ongoing
+# replacement for that stopgap and has not been run yet in this repo.
+
+on:
+  pull_request:
+    paths:
+      - "wp-content/plugins/securepress-2026/includes/**/*.php"
+      - "wp-content/plugins/securepress-2026/languages/**"
+
+jobs:
+  pot-drift:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app09_php_WORDPRESS/wp-content/plugins/securepress-2026
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: wp-cli, composer
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Regenerate .pot and diff against the committed file
+        run: |
+          cp languages/securepress-2026.pot /tmp/securepress-2026.pot.committed
+          wp i18n make-pot . languages/securepress-2026.pot --skip-audit --domain=securepress-2026
+          if ! diff -u /tmp/securepress-2026.pot.committed languages/securepress-2026.pot; then
+            echo "::error::languages/securepress-2026.pot is out of date. Run 'wp i18n make-pot . languages/securepress-2026.pot --skip-audit --domain=securepress-2026' and commit the result."
+            exit 1
+          fi
+
+      - name: Regenerate .mo files from .po and diff against committed binaries
+        run: |
+          for locale in pl_PL en_US; do
+            cp "languages/securepress-2026-${locale}.mo" "/tmp/securepress-2026-${locale}.mo.committed"
+            wp i18n make-mo languages/ languages/
+            if ! cmp -s "/tmp/securepress-2026-${locale}.mo.committed" "languages/securepress-2026-${locale}.mo"; then
+              echo "::error::languages/securepress-2026-${locale}.mo does not match its .po source. Run 'wp i18n make-mo languages/' and commit the result."
+              exit 1
+            fi
+          done

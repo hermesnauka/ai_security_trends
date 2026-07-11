@@ -61,12 +61,46 @@ requirement). A MITRE ATLAS kill-chain timeline (`assets/js/mitre-killchain.js`,
 charting dependency) renders for the 4 threats with data in `data/mitre_atlas_killchain.json`,
 alongside — never replacing — a plain `<ol>` that is the actual accessible/no-JS content.
 
-**Still not built:** mitigations/code samples for any threat or card beyond the 5 above, admin
-screens (`includes/admin/` is an empty directory), search/export (Phase 6), the dedicated
-stride-heatmap/matrix pages, i18n `.po`/`.mo` files, and all tests (`tests/`, `e2e/` don't
-exist yet — nothing in this plugin has been executed against a real WordPress+MySQL
-instance; no `composer install` has been run either). Verify against the filesystem, not
-this paragraph, before assuming a later-phase feature exists.
+**i18n `.pot`/`.po`/`.mo` files are now built** (PLAN.md §6 Phase 5), with two things worth
+knowing before touching them:
+
+1. **This sandbox has neither WP-CLI nor `msgfmt`/`gettext` tools installed**, so
+   `languages/securepress-2026.pot`/`-pl_PL.po`/`-en_US.po` were produced by a one-off Python
+   extraction script (not committed — it was a throwaway), and the two `.mo` binaries were
+   compiled by a hand-written GNU-MO-format writer, independently verified by reading them
+   back with Python's stdlib `gettext` module (including correct 3-form Polish pluralization:
+   n=22 → "zagrożenia", not "zagrożeń"). `.github/workflows/i18n-check.yml` wires in the
+   *real* `wp i18n make-pot`/`make-mo` tools as the ongoing drift-check (FR-18.7/NFR-06.3) —
+   that workflow has never actually run in this repo (no CI runner has executed it yet), and
+   the real tool's regenerated `.pot` may format entries slightly differently than the Python
+   stopgap that produced the current committed file, even though its content should agree.
+2. **A future run of the real `wp i18n make-pot` tool must not "fix" a few deliberately
+   untranslated terms** — `AUTONOMY RISK` and `Severity` are fixed English badge/label terms
+   kept as-is in both `pl_PL.po` and `en_US.po` (matching the "ATTACK DEMO" convention already
+   in the mixed-language sentence at `single-threat.php`), and `Digital-by-Default Harms` is a
+   proper noun left untranslated everywhere in this project, including `user_stories+tests.md`.
+   Separately, a handful of msgids are **authored in English** even though Polish is the
+   default locale — `Framework not found.`, `Threat not found.`, `Too many requests.`,
+   `Search query must be 200 characters or fewer.`, `SecurePress Editor`, and the MySQL-version
+   guard message in `class-plugin.php` — these are REST error responses and one admin role
+   name; `pl_PL.po` carries real Polish translations for them (not identity), which is the
+   reverse direction from every other string in this plugin.
+
+`sp_threat_translations` (FR-18.4) is also now actually used — it was defined in the schema
+since Phase 1 but nothing populated or read it until now.
+`includes/data/class-threat-translation-repository.php` +
+`class-threat-translation-seed-loader.php` seed **Polish translations for all 20 seeded
+threats** (the full OWASP Web + LLM Top 10 set, not a smaller slice this time), and
+`Threat_Service::list()`/`find()` now take a `$locale` parameter with an EN fallback
+(FR-18.6), wired from `?lang=` in `Threat_Controller`, `archive-threat.php`, and
+`single-threat.php`.
+
+**Still not built:** mitigations/code samples for any threat or card beyond the 5 from Phase
+4, admin screens (`includes/admin/` is an empty directory), search/export (Phase 6), the
+dedicated stride-heatmap/matrix pages, and all tests (`tests/`, `e2e/` don't exist yet —
+nothing in this plugin has been executed against a real WordPress+MySQL instance; no
+`composer install` has been run either). Verify against the filesystem, not this paragraph,
+before assuming a later-phase feature exists.
 
 ## Architecture: one WordPress plugin, not a backend + SPA
 

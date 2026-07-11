@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 use SecurePress\Data\Threat_Filter;
 use SecurePress\Service\Threat_Service;
 use SecurePress\Templates\Language_Switcher;
+use SecurePress\Templates\Template_Loader;
 
 $filter = new Threat_Filter(
 	framework_code: isset( $_GET['framework'] ) ? sanitize_text_field( wp_unslash( $_GET['framework'] ) ) : null,
@@ -26,7 +27,12 @@ $filter = new Threat_Filter(
 	query: isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : null,
 );
 
-$result = ( new Threat_Service() )->list( $filter );
+$requested_lang = Template_Loader::param( 'lang' );
+$locale         = in_array( $requested_lang, array( 'pl', 'en' ), true )
+	? $requested_lang
+	: ( str_starts_with( get_locale(), 'en' ) ? 'en' : 'pl' );
+
+$result = ( new Threat_Service() )->list( $filter, $locale );
 
 get_header();
 ?>
@@ -71,6 +77,24 @@ get_header();
 	<?php if ( array() === $result['content'] ) : ?>
 		<p><?php esc_html_e( 'Brak wyników dla podanych filtrów.', 'securepress-2026' ); ?></p>
 	<?php endif; ?>
+
+	<?php
+	// FR-17.3/17.4: the no-JS baseline is a plain link to the REST endpoint —
+	// it returns {jobId, statusUrl} JSON rather than a file, which is
+	// functional but not seamless without JavaScript. export-panel.js
+	// intercepts the click and polls status/offers a download link inline.
+	$export_url = rest_url( 'securepress/v1/export' );
+	if ( null !== $filter->framework_code ) {
+		$export_url = add_query_arg( 'framework', $filter->framework_code, $export_url );
+	}
+	$export_url = add_query_arg( 'format', 'csv', $export_url );
+	?>
+	<div class="securepress-export-panel" data-testid="export-panel" data-export-url="<?php echo esc_url( $export_url ); ?>">
+		<a href="<?php echo esc_url( $export_url ); ?>" data-testid="export-trigger">
+			<?php esc_html_e( 'Eksportuj do CSV', 'securepress-2026' ); ?>
+		</a>
+		<span data-testid="export-status"></span>
+	</div>
 </main>
 <?php
 get_footer();

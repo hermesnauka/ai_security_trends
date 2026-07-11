@@ -1,0 +1,186 @@
+# Polish/English translation for SecurePress 2026.
+# Copyright (C) 2026 SecurePress 2026 contributors
+# This file is distributed under the GPL-2.0-or-later license.
+msgid ""
+msgstr ""
+"Project-Id-Version: SecurePress 2026 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/hermesnauka/ai_security_trends/issues\n"
+"POT-Creation-Date: 2026-07-11 12:00+0000\n"
+"PO-Revision-Date: 2026-07-11 12:00+0000\n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Domain: securepress-2026\n"
+
+#: includes/templates/home.php:38
+msgid "%d zagrożenie"
+msgid_plural "%d zagrożeń"
+msgstr[0] "%d zagrożenie"
+msgstr[1] "%d zagrożenia"
+msgstr[2] "%d zagrożeń"
+
+#: includes/templates/single-threat.php:115
+msgid "ATTACK DEMO — kod podatny, kliknij aby potwierdzić i zobaczyć (nie używać w produkcji)"
+msgstr "ATTACK DEMO — kod podatny, kliknij aby potwierdzić i zobaczyć (nie używać w produkcji)"
+
+#: includes/templates/suit-archive.php:57
+msgid "AUTONOMY RISK"
+msgstr "AUTONOMY RISK"
+
+#: includes/templates/single-threat.php:93
+msgid "Brak jeszcze próbek kodu dla tej mitigacji."
+msgstr "Brak jeszcze próbek kodu dla tej mitigacji."
+
+#: includes/templates/single-threat.php:65
+msgid "Brak jeszcze zdefiniowanych mitigacji dla tego zagrożenia."
+msgstr "Brak jeszcze zdefiniowanych mitigacji dla tego zagrożenia."
+
+#: includes/templates/suit-archive.php:82
+msgid "Brak kart dla podanego suit/edition."
+msgstr "Brak kart dla podanego suit/edition."
+
+#: includes/templates/archive-threat.php:72
+msgid "Brak wyników dla podanych filtrów."
+msgstr "Brak wyników dla podanych filtrów."
+
+#: includes/class-plugin.php:182
+msgid "Brak wyników."
+msgstr "Brak wyników."
+
+#: includes/templates/digital-harms.php:40
+msgid "Digital-by-Default Harms"
+msgstr "Digital-by-Default Harms"
+
+#: includes/templates/archive-threat.php:54
+msgid "Filtruj"
+msgstr "Filtruj"
+
+#: includes/rest-api/class-framework-controller.php:35
+msgid "Framework not found."
+msgstr "Nie znaleziono frameworku."
+
+#: includes/templates/suit-archive.php:44
+#. translators: %s: Cornucopia deck edition, e.g. webapp, mlsec
+msgid "Karty Cornucopia — %s"
+msgstr "Karty Cornucopia — %s"
+
+#: includes/templates/suit-archive.php:39
+#. translators: %s: Cornucopia suit code, e.g. FRE, LLM
+msgid "Karty Cornucopia — Suit %s"
+msgstr "Karty Cornucopia — Suit %s"
+
+#: includes/templates/single-threat.php:46
+msgid "Kod"
+msgstr "Kod"
+
+#: includes/templates/single-threat.php:45
+#: includes/templates/single-threat.php:63
+msgid "Mitigacje"
+msgstr "Mitigacje"
+
+#: includes/templates/single-threat.php:73
+msgid "Nakład:"
+msgstr "Nakład:"
+
+#: includes/templates/single-threat.php:132
+msgid "Oś czasu MITRE ATLAS (Kill-Chain)"
+msgstr "Oś czasu MITRE ATLAS (Kill-Chain)"
+
+#: includes/templates/single-threat.php:58
+msgid "Powierzchnia Ataku"
+msgstr "Powierzchnia Ataku"
+
+#: includes/templates/single-threat.php:47
+msgid "Powiązania"
+msgstr "Powiązania"
+
+#: includes/templates/single-threat.php:128
+msgid "Powiązania Cross-Framework"
+msgstr "Powiązania Cross-Framework"
+
+#: includes/templates/single-threat.php:43
+#: includes/templates/single-threat.php:51
+msgid "Przegląd"
+msgstr "Przegląd"
+
+#: includes/templates/archive-threat.php:35
+msgid "Przeglądarka Zagrożeń"
+msgstr "Przeglądarka Zagrożeń"
+
+#: includes/templates/single-threat.php:81
+msgid "Próbki Kodu"
+msgstr "Próbki Kodu"
+
+#: includes/rest-api/class-threat-controller.php:42
+msgid "Search query must be 200 characters or fewer."
+msgstr "Zapytanie wyszukiwania musi mieć maksymalnie 200 znaków."
+
+#: includes/class-plugin.php:95
+#. translators: %s: minimum required MySQL version
+msgid "SecurePress 2026 requires MySQL %s or newer (or MariaDB 10.2.1+) for CHECK constraint enforcement, and refuses to activate on an older server rather than silently losing that guarantee."
+msgstr "SecurePress 2026 wymaga MySQL %s lub nowszego (albo MariaDB 10.2.1+) do wymuszania ograniczenia CHECK i odmawia aktywacji na starszym serwerze zamiast po cichu tracić tę gwarancję."
+
+#: includes/templates/home.php:22
+msgid "SecurePress 2026 — Katalog Frameworków Bezpieczeństwa"
+msgstr "SecurePress 2026 — Katalog Frameworków Bezpieczeństwa"
+
+#: includes/class-plugin.php:116
+msgid "SecurePress Editor"
+msgstr "Redaktor SecurePress"
+
+#: includes/templates/archive-threat.php:44
+msgid "Severity"
+msgstr "Severity"
+
+#: includes/templates/single-threat.php:74
+msgid "Skuteczność:"
+msgstr "Skuteczność:"
+
+#: includes/templates/archive-threat.php:39
+msgid "Szukaj"
+msgstr "Szukaj"
+
+#: includes/templates/digital-harms.php:43
+msgid "Ta talia nie jest listą podatności technicznych z poziomem severity — modeluje harmy projektowe (wykluczenie cyfrowe, nieprzejrzyste projektowanie) w usługach publicznych, mapowane na OWASP A04:2021 Insecure Design."
+msgstr "Ta talia nie jest listą podatności technicznych z poziomem severity — modeluje harmy projektowe (wykluczenie cyfrowe, nieprzejrzyste projektowanie) w usługach publicznych, mapowane na OWASP A04:2021 Insecure Design."
+
+#: includes/rest-api/class-threat-controller.php:95
+msgid "Threat not found."
+msgstr "Nie znaleziono zagrożenia."
+
+#: includes/rest-api/class-rest-api.php:97
+msgid "Too many requests."
+msgstr "Zbyt wiele żądań."
+
+#: includes/templates/home.php:24
+msgid "Treść ma charakter edukacyjny i musi być zweryfikowana wobec oficjalnych źródeł."
+msgstr "Treść ma charakter edukacyjny i musi być zweryfikowana wobec oficjalnych źródeł."
+
+#: includes/templates/single-threat.php:72
+msgid "Typ:"
+msgstr "Typ:"
+
+#: includes/templates/single-threat.php:44
+#: includes/templates/single-threat.php:56
+msgid "Wektory Ataku"
+msgstr "Wektory Ataku"
+
+#: includes/templates/archive-threat.php:46
+msgid "Wszystkie"
+msgstr "Wszystkie"
+
+#: includes/templates/class-language-switcher.php:24
+msgid "Wybór języka"
+msgstr "Wybór języka"
+
+#: includes/templates/single-threat.php:25
+msgid "Zagrożenie nie zostało znalezione."
+msgstr "Zagrożenie nie zostało znalezione."
+
+#: includes/templates/digital-harms.php:54
+#: includes/templates/suit-archive.php:62
+msgid "harm projektowy"
+msgstr "harm projektowy"
+

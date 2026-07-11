@@ -33,6 +33,7 @@ final class Schema {
 		}
 
 		self::add_constraints();
+		self::add_fulltext_indexes();
 	}
 
 	private static function add_constraints(): void {
@@ -109,6 +110,48 @@ final class Schema {
 				DB_NAME,
 				$table,
 				$constraint_name
+			)
+		);
+
+		if ( '0' === (string) $exists ) {
+			$wpdb->query( $alter_sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL, no user input; identifiers are hardcoded constants above.
+		}
+	}
+
+	/**
+	 * FR-17.1: FULLTEXT indexes back MATCH...AGAINST search (Search_Repository).
+	 * Added via ALTER TABLE for the same reason as add_constraints() — dbDelta()'s
+	 * regex parser is documented as reliable for plain KEY/UNIQUE KEY but not
+	 * consistently for FULLTEXT KEY across MySQL/MariaDB versions.
+	 */
+	private static function add_fulltext_indexes(): void {
+		global $wpdb;
+
+		$p = $wpdb->prefix;
+
+		self::add_index_if_missing(
+			"{$p}sp_threats",
+			'ft_threats_search',
+			"ALTER TABLE {$p}sp_threats ADD FULLTEXT INDEX ft_threats_search (title, description)"
+		);
+
+		self::add_index_if_missing(
+			"{$p}sp_cards",
+			'ft_cards_search',
+			"ALTER TABLE {$p}sp_cards ADD FULLTEXT INDEX ft_cards_search (description_en, description_pl)"
+		);
+	}
+
+	private static function add_index_if_missing( string $table, string $index_name, string $alter_sql ): void {
+		global $wpdb;
+
+		$exists = $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_NAME = %s',
+				DB_NAME,
+				$table,
+				$index_name
 			)
 		);
 
@@ -235,6 +278,18 @@ final class Schema {
                 PRIMARY KEY  (id),
                 KEY source_threat_id (source_threat_id),
                 KEY target_threat_id (target_threat_id)
+            ) {$charset_collate};",
+
+			"CREATE TABLE {$p}sp_export_jobs (
+                job_id         VARCHAR(36)  NOT NULL,
+                status         ENUM('pending','processing','completed','failed') NOT NULL DEFAULT 'pending',
+                format         ENUM('csv') NOT NULL,
+                framework_code VARCHAR(32) NULL,
+                file_path      VARCHAR(500) NULL,
+                error_message  VARCHAR(500) NULL,
+                created_at     DATETIME NOT NULL,
+                completed_at   DATETIME NULL,
+                PRIMARY KEY  (job_id)
             ) {$charset_collate};",
 
 			"CREATE TABLE {$p}sp_content_hashes (

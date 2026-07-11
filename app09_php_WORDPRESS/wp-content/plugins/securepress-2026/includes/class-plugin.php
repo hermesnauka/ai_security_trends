@@ -5,11 +5,14 @@ declare( strict_types = 1 );
 namespace SecurePress;
 
 use SecurePress\Cards\Card_Ingestion_Service;
+use SecurePress\Cron\Export_Job;
 use SecurePress\Cron\Periodic_Reverify_Job;
 use SecurePress\Cron\Reingest_Deck_Job;
+use SecurePress\Data\Cross_Reference_Seed_Loader;
 use SecurePress\Data\Mitigation_Seed_Loader;
 use SecurePress\Data\Schema;
 use SecurePress\Data\Seed_Loader;
+use SecurePress\Data\Threat_Translation_Seed_Loader;
 use SecurePress\Rest_Api\Rest_Api;
 use SecurePress\Templates\Template_Loader;
 
@@ -40,6 +43,7 @@ final class Plugin {
 		add_filter( 'xmlrpc_enabled', '__return_false' );
 		add_action( 'init', array( Periodic_Reverify_Job::class, 'register' ) );
 		add_action( 'init', array( Reingest_Deck_Job::class, 'register' ) );
+		add_action( 'init', array( Export_Job::class, 'register' ) );
 	}
 
 	public function load_textdomain(): void {
@@ -104,6 +108,8 @@ final class Plugin {
 		Schema::create_tables();
 		self::register_role_and_capability();
 		( new Seed_Loader() )->seed();
+		( new Threat_Translation_Seed_Loader() )->seed();
+		( new Cross_Reference_Seed_Loader() )->seed();
 		( new Card_Ingestion_Service() )->ingest_all();
 		( new Mitigation_Seed_Loader() )->seed();
 		update_option( 'securepress_db_version', SECUREPRESS_DB_VERSION );
@@ -117,12 +123,16 @@ final class Plugin {
 			array(
 				'read'                => true,
 				'manage_securepress'  => true,
+				'securepress_trainer' => true,
 			)
 		);
 
 		$administrator = get_role( 'administrator' );
 		if ( null !== $administrator ) {
 			$administrator->add_cap( 'manage_securepress' );
+			// SR-01.3: /stride-heatmap accepts either capability; granting both
+			// to administrator keeps it usable there without a second role.
+			$administrator->add_cap( 'securepress_trainer' );
 		}
 	}
 
@@ -137,6 +147,14 @@ final class Plugin {
 		wp_enqueue_script(
 			'securepress-2026-threat-browser',
 			SECUREPRESS_PLUGIN_URL . 'assets/js/threat-browser.js',
+			array(),
+			SECUREPRESS_VERSION,
+			array( 'strategy' => 'defer', 'in_footer' => true )
+		);
+
+		wp_enqueue_script(
+			'securepress-2026-export-panel',
+			SECUREPRESS_PLUGIN_URL . 'assets/js/export-panel.js',
 			array(),
 			SECUREPRESS_VERSION,
 			array( 'strategy' => 'defer', 'in_footer' => true )
