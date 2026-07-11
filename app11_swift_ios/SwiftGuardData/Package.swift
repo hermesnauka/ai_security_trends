@@ -19,7 +19,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftGuardDataTests",
-            dependencies: ["SwiftGuardData", "SwiftCheck"],
+            dependencies: ["SwiftGuardData", "SwiftCheck", "Yams"],
             // Every item below is a symlink into `../../SwiftGuardApp/Resources` — the
             // SAME real bundled content the app itself seeds from, not a synthetic
             // duplicate that could silently drift out of sync. This is what lets
